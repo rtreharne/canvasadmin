@@ -22,6 +22,7 @@ services:
       - DB_PASS=changeme
     depends_on:
       - db
+    container_name: upandrunning
   
   db:
     image: postgres:13-alpine
