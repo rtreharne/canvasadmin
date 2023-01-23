@@ -45,6 +45,28 @@ docker-compose down
 ```
 *This will destroy your local database!
 
+### Step 4 - Create a superuser
+```bash
+docker-compose run --rm app sh -c "python manage.py createsuperuser"
+```
+Run `docker-compose up app` again and navigate to `/admin` to login to Django admin.
+
+### Step 5 - Make sure your beat scheduler is running
+
+This command creates a new container to run in the background.
+
+```bash
+docker-compose run -d --rm app sh -c "celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+```
+
+### Step 5 - Development
+
+Develop your app locally. Your changes should be reflected on your local server
+
+### Step 6 - Test deployment locally
+
+### Step 7 - Deploy to AWS EC2
+
 
 
 

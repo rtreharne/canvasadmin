@@ -26,6 +26,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.environ.get('DEBUG', 0)))
+SECRET_KEY="b%r&ui6&(%-xo+&3#04$t*04sw2)3b-04a6$j4=ue6y7fx@bnt"
 
 ALLOWED_HOSTS = []
 ALLOWED_HOSTS.extend(
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_celery_beat',
     'core'
 ]
 
@@ -139,3 +141,7 @@ STATIC_ROOT = '/vol/web/static'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CELERY_BROKER_URL = 'redis://redis:6379'
+CELERY_RESULT_BACKEND = 'redis://redis:6379'
+BROKER_URL = 'redis://localhost:6379/'
