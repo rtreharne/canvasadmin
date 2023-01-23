@@ -56,22 +56,6 @@ services:
       - db
       - redis
       - app
-  
-  # Beat
-  celery-beat:
-    build: 
-      context: .
-    command: >
-      sh -c "celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
-    volumes:
-      - ./app:/app
-    environment:
-      - SECRET_KEY=${SECRET_KEY}
-      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-    depends_on:
-      - celery
-      - redis
-      - app
 
 
 
