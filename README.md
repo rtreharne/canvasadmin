@@ -39,12 +39,6 @@ docker-compose up app
 ```
 To check open up http://127.0.0.1:8000/
 
-If you want to stop and remove your container later then:
-```bash
-docker-compose down
-```
-*This will destroy your local database!
-
 ### Step 4 - Create a superuser
 ```bash
 docker-compose run --rm app sh -c "python manage.py createsuperuser"
@@ -65,7 +59,27 @@ Develop your app locally. Your changes should be reflected on your local server
 
 ### Step 6 - Test deployment locally
 
+```bash
+docker-compose -f docker-compose-deploy.yml build
+```
+```bash
+docker-compose -f docker-compose-deploy.yml run -d --rm app sh -c "celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+```
+```bash
+docker-compose -f docker-compose-deploy.yml up
+```
+
 ### Step 7 - Deploy to AWS EC2
+
+```bash
+docker-compose -f docker-compose-deploy.yml build
+```
+```bash
+docker-compose -f docker-compose-deploy.yml run -d --rm app sh -c "celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+```
+```bash
+docker-compose -f docker-compose-deploy.yml up
+```
 
 
 

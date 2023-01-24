@@ -37,7 +37,32 @@ services:
       - 80:8000
     volumes:
       - static-data:/vol/static
+    
+  # Redis
+  redis:
+    image: redis:alpine
+    container_name: redis
+    environment:
+      - SECRET_KEY=${SECRET_KEY}    
+
+  # Celery
+  celery:
+    restart: always
+    build:
+      context: .
+    command: >
+      sh -c "celery -A app worker -l INFO"
+    volumes:
+      - static-data:/vol/web/
+    container_name: celery
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      - db
+      - redis
+      - app
   
 volumes:
   postgres-data:
   static-data:
+
