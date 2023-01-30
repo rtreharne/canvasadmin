@@ -18,6 +18,11 @@ git clone git@github.com:rtreharne/django-docker-compose-deployment.git
 
 If you need to configure your ssh key then read <a href="https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account" target="_blank">this</a>.
 
+Also, for testing locally:
+```bash
+cp env.sample .env
+```
+
 ### Step 2 - Install Docker
 
 Linux (Ubbuntu 22.04):
