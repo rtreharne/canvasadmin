@@ -31,7 +31,7 @@ https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-o
 
 Windows:
 
-https://statswork.wiki/docker-for-windows/install-windows-home/
+https://statswork.wiki/docker-for-windows/install-windows-home/f
 
 ### Step 3 - Build image and run in container locally
 

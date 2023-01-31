@@ -46,9 +46,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'crispy_forms',
     'django_celery_beat',
-    'core'
+    'core',
+    'accounts',
+    'crispy_forms',
 ]
 
 MIDDLEWARE = [
@@ -146,3 +147,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CELERY_BROKER_URL = 'redis://redis:6379'
 CELERY_RESULT_BACKEND = 'redis://redis:6379'
 BROKER_URL = 'redis://localhost:6379/'
+
+LOGOUT_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL= "/"

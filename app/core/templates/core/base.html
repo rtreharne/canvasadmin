@@ -96,12 +96,24 @@
   </head>
   <body>
 
+
 <div class="col-lg-8 mx-auto p-4 py-md-5">
+
   <header class="d-flex align-items-center pb-3 mb-5 border-bottom">
-    <a href="/" class="d-flex align-items-center text-dark text-decoration-none">
+    
+    <a href="/" class="d-flex  text-dark text-decoration-none">
+        
+
       <span class="fs-4">New Webapp</span>
+      
     </a>
   </header>
+
+  {% if user.is_authenticated %}
+    <p>User: {{user.username}} | <a href="{% url 'accounts:logout' %}">Logout</a></p>
+  {% else %} 
+    <p><a href="/accounts/login/">Login</a> | <a href="{% url 'accounts:register' %}">Register</a></p>
+  {% endif %}
 
   <main>
     {% block content %}
