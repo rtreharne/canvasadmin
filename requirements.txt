@@ -6,3 +6,4 @@ celery>=5.0,<5.1
 django-celery-beat==2.1.0
 django-crispy-forms==1.14.0
 canvasapi==3.0.0
+django-jazzmin==2.6.0

@@ -40,6 +40,7 @@ ALLOWED_HOSTS.extend(
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'core',
     'accounts',
+    'logs',
     'crispy_forms',
 ]
 
@@ -82,6 +84,28 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'app.wsgi.application'
 
+JAZZMIN_SETTINGS = {
+    "site_title": "Assessment Admin",
+    "site_header": "Assessment Admin",
+    "welcome_sign": "Welcome to Assessment Admin. Please Login.",
+    "copyright": "R. E. Treharne and J. Foster",
+    "site_brand": "Assessment Admin",
+     # Logo to use for your site, must be present in static files, used for brand on top left
+    "site_logo": "logo.png",
+
+    # Logo to use for your site, must be present in static files, used for login form logo (defaults to site_logo)
+    "login_logo": "logo.png",
+
+    # Logo to use for login form in dark themes (defaults to login_logo)
+    "login_logo_dark": None,
+
+    # CSS classes that are applied to the logo above
+    #"site_logo_classes": "hidden",
+
+    # Relative path to a favicon for your site, will default to site_logo if absent (ideally 32x32 px)
+    "site_icon": None,
+
+}
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -150,3 +174,5 @@ BROKER_URL = 'redis://localhost:6379/'
 
 LOGOUT_REDIRECT_URL = "/"
 LOGIN_REDIRECT_URL= "/"
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS=None
