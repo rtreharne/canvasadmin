@@ -169,7 +169,7 @@ def get_assignments_by_course(username, course_id):
             ungraded = summary["ungraded"],
             pc_graded = pc_graded,
             not_submitted = summary["not_submitted"],
-            types = assignment.submission_types
+            #types = assignment.submission_types
 
         ).save()
     print("Assignment saved")
@@ -356,6 +356,13 @@ def is_datetime(dt):
 def task_get_submissions(username, assignment_ids):
     for assignment_id in assignment_ids:
         task_get_submission(username, assignment_id)
+
+    
+    
+    try:
+        submissions = Submission.objects.filter(assignment__assignment_id=assignment_id)
+    except:
+        print("")
 
 @shared_task()
 def task_get_submission(username, assignment_id):

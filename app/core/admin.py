@@ -9,6 +9,9 @@ from .tasks import update_assignments
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
+from .filters import AssignmentDateFilter
+from datetime import datetime
+from recon.tasks import submission_recon
 
 class StaffAdmin(admin.ModelAdmin):
     list_display = ("name", "items_graded", "courses_graded_in",)
@@ -23,6 +26,10 @@ class CourseAdmin(admin.ModelAdmin):
         "course_department"
     )
 
+    search_fields = (
+        "course_code",
+    )
+
     actions = ["admin_get_assignments_by_course",]
 
     def get_queryset(self, request):
@@ -31,7 +38,7 @@ class CourseAdmin(admin.ModelAdmin):
         return queryset
 
     @admin.action(description="Get assignments for selected")
-    def admin_get_assignmets_by_course(modeladmin, request, queryset):
+    def admin_get_assignments_by_course(modeladmin, request, queryset):
         if request.user.is_staff:
             course_ids = [x.course_id for x in queryset]
             get_assignments_by_courses.delay(request.user.username, course_ids)
@@ -49,7 +56,6 @@ class StudentAdmin(admin.ModelAdmin):
         "sortable_name",
     )
 
-admin.site.register(Student, StudentAdmin)
 
 class SecondsLateFilter(admin.SimpleListFilter):
     title = 'Late Filter'
@@ -77,6 +83,8 @@ class SecondsLateFilter(admin.SimpleListFilter):
         
         return queryset
 
+
+
 class ScoreFilter(admin.SimpleListFilter):
     title = 'Score Filter'
     parameter_name = 'score'
@@ -102,6 +110,7 @@ class ScoreFilter(admin.SimpleListFilter):
             return queryset.filter(score__lt=50)
         
         return queryset
+
 
 class IntegrityConcernFilter(admin.SimpleListFilter):
     title = 'Integrity Flag'
@@ -131,6 +140,7 @@ class IntegrityConcernFilter(admin.SimpleListFilter):
             return queryset.filter(integrity_concern=None)
         return queryset
 
+
 class SubmissionAdmin(admin.ModelAdmin):
     list_per_page=500
 
@@ -146,13 +156,19 @@ class SubmissionAdmin(admin.ModelAdmin):
         "similarity_link"
     )
 
-    list_filter=( "assignment__course__course_code", "assignment__assignment_name", "student__sortable_name", ScoreFilter, SecondsLateFilter, IntegrityConcernFilter)
+    list_filter=("assignment__course__course_code", 
+                 "assignment__assignment_name",
+                 "student__sortable_name",
+                 ScoreFilter,
+                 SecondsLateFilter,
+                 IntegrityConcernFilter,
+                 )
 
     search_fields = (
         "student__sortable_name", "assignment__assignment_name",
     )
 
-    actions = ["sync_submissions", export_as_csv_action(),]
+    actions = ["sync_submissions", "sync_grader_summaries", export_as_csv_action(),]
 
     def student_link(self, obj):
         return format_html('<a href="?student__sortable_name={}">{}</a>'.format(obj.student, obj.student))
@@ -197,8 +213,14 @@ class SubmissionAdmin(admin.ModelAdmin):
         
             update_submissions.delay(request.user.username, submission_ids)
             messages.info(request, "Syncing submissions. This action is not instantaneous. Check back later.")
+    
+    @admin.action(description="Sync grader summaries for selected")
+    def sync_grader_summaries(modeladmin, request, queryset):
+        if request.user.is_staff:
+            submission_ids = [x.id for x in queryset]
+            submission_recon(submission_ids)
 
-admin.site.register(Submission, SubmissionAdmin)
+    
 
 class GradedFilter(admin.SimpleListFilter):
     title = 'Grading Status'
@@ -228,14 +250,13 @@ class GradedFilter(admin.SimpleListFilter):
         #return queryset
 
 
-
-
 class AssignmentAdmin(admin.ModelAdmin):
     list_display = (
         "assignment_link",
         "link",
         "due_at",
         "graded_pc",
+        "average_score",
         "anonymous_grading",
         "published",
         "active",
@@ -252,7 +273,16 @@ class AssignmentAdmin(admin.ModelAdmin):
 
     search_fields = ('assignment_name', 'course__course_code')
 
-    list_filter = ('course__course_code', 'assignment_name', GradedFilter, 'active', 'due_at', 'sas_exam', 'published')
+    list_filter = (
+                   'course__course_code',
+                   'assignment_name',
+                   GradedFilter,
+                   'active',
+                   'due_at',
+                   'sas_exam',
+                   'published',
+                    AssignmentDateFilter)
+
 
 
     def get_queryset(self, request):
@@ -355,7 +385,7 @@ class AssignmentAdmin(admin.ModelAdmin):
             messages.info(request, "Adding five minutes to deadlines. This action is not instantaneous. Please check back later.")
             
 
-
-#admin.site.register(Course)
 admin.site.register(Assignment, AssignmentAdmin)
 admin.site.register(Course, CourseAdmin)
+admin.site.register(Submission, SubmissionAdmin)
+admin.site.register(Student, StudentAdmin)

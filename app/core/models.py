@@ -31,6 +31,7 @@ class Assignment(models.Model):
     pc_graded = models.FloatField(null=True, blank=True, verbose_name="Graded (%)", default=0)
     not_submitted = models.IntegerField(null=True, blank=True,default=0)
     sas_exam = models.BooleanField(default=False, verbose_name="SAS Exam")
+    average_score = models.FloatField(null=True, blank=True, verbose_name="Average Score (%)")
     type = models.CharField(max_length=128, null=True, blank=True)
 
     def __str__(self):
