@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     'accounts',
     'logs',
     'crispy_forms',
-    'recon'
     
 ]
 

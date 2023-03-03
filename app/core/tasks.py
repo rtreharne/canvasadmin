@@ -489,6 +489,7 @@ def task_get_submission(username, assignment_id):
                     submission_id=sub.id,
                     submitted_at=json_to_datetime(sub.submitted_at),
                     assignment=assignment,
+                    course=assigment.course,
                     score=score,
                     integrity_concern = integrity_flag,
                     posted_at = posted_at,

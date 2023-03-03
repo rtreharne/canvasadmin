@@ -60,6 +60,7 @@ class Submission(models.Model):
     submission_id = models.IntegerField()
     submitted_at = models.DateTimeField(null=True, blank=True)
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, null=True, blank=True, on_delete=models.CASCADE)
     score = models.FloatField(null=True, blank=True)
     posted_at = models.DateTimeField(null=True, blank=True)
     graded_by = models.CharField(max_length=286, null=True, blank=True)

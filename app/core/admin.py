@@ -11,7 +11,6 @@ from .admin_actions import export_as_csv_action
 from django.contrib import messages
 from .filters import AssignmentDateFilter
 from datetime import datetime
-from recon.tasks import submission_recon
 
 class StaffAdmin(admin.ModelAdmin):
     list_display = ("name", "items_graded", "courses_graded_in",)
@@ -146,6 +145,7 @@ class SubmissionAdmin(admin.ModelAdmin):
 
     list_display = (
         "student_link",
+        "course",
         "submission_link",
         "score",
         "graded_by",
@@ -168,7 +168,7 @@ class SubmissionAdmin(admin.ModelAdmin):
         "student__sortable_name", "assignment__assignment_name",
     )
 
-    actions = ["sync_submissions", "sync_grader_summaries", export_as_csv_action(),]
+    actions = ["sync_submissions", export_as_csv_action(),]
 
     def student_link(self, obj):
         return format_html('<a href="?student__sortable_name={}">{}</a>'.format(obj.student, obj.student))
@@ -213,12 +213,6 @@ class SubmissionAdmin(admin.ModelAdmin):
         
             update_submissions.delay(request.user.username, submission_ids)
             messages.info(request, "Syncing submissions. This action is not instantaneous. Check back later.")
-    
-    @admin.action(description="Sync grader summaries for selected")
-    def sync_grader_summaries(modeladmin, request, queryset):
-        if request.user.is_staff:
-            submission_ids = [x.id for x in queryset]
-            submission_recon(submission_ids)
 
     
 
