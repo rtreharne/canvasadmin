@@ -158,6 +158,7 @@ class SubmissionAdmin(admin.ModelAdmin):
 
     list_filter=("assignment__course__course_code", 
                  "assignment__assignment_name",
+                 "assignment__due_at",
                  "student__sortable_name",
                  ScoreFilter,
                  SecondsLateFilter,
