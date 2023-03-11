@@ -316,7 +316,10 @@ def update_assignments(username, assignment_ids):
 
                     print(key, value, datetime, a.__dict__[key].replace(tzinfo=None))
                     setattr(a, key, datetime)
-                    a.pc_ungrade = pc_ungraded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
+                    try:    
+                        a.pc_ungraded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
+                    except:
+                        a.pc_ungraded = 0
                     a.save()
             else:
                 if canvas_assignment.__dict__[value] != a.__dict__[key]:
@@ -368,8 +371,12 @@ def update_assignments(username, assignment_ids):
 
                     print(key, value, canvas_assignment.__dict__[value], a.__dict__[key])
                     setattr(a, key, canvas_assignment.__dict__[value])
-                    a.pc_ungrade = pc_ungraded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
+                    try:    
+                        a.pc_ungraded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
+                    except:
+                        a.pc_ungraded = 0
                     a.save()
+                    
                     
         #except:
            #AssignmentLog(
