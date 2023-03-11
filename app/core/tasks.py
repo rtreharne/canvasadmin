@@ -174,53 +174,7 @@ def get_assignments_by_course(username, course_id):
         except:
             pc_graded = None
 
-
-        Assignment(
-            department = user.department,
-            assignment_name = assignment.name[:128],
-            course = c,
-            assignment_id = assignment.id,
-            unlock_at = json_to_datetime(assignment.unlock_at),
-            lock_at = json_to_datetime(assignment.lock_at),
-            due_at = json_to_datetime(assignment.due_at),
-            url = assignment.html_url,
-            needs_grading_count = assignment.needs_grading_count,
-            published = assignment.published,
-            anonymous_grading = assignment.anonymous_grading,
-            active = True,
-            graded = summary["graded"],
-            ungraded = summary["ungraded"],
-            pc_graded = pc_graded,
-            not_submitted = summary["not_submitted"],
-            #types = assignment.submission_types
-
-        ).save()
-    print("Assignment saved")
-
-
-@shared_task
-def get_assignments(username):
-    user = UserProfile.objects.get(user__username=username)
-    API_URL = user.department.CANVAS_API_URL
-    API_TOKEN = user.department.CANVAS_API_TOKEN
-    canvas = Canvas(API_URL, API_TOKEN)
-
-    courses = Course.objects.filter(course_department = user.department)
-    
-    for c in courses:
-        #try:
-        course = canvas.get_course(c.course_id)
-
-        assignments = [x for x in course.get_assignments()]
-        for assignment in assignments:
-            summary = get_submission_summary(API_URL, API_TOKEN, course.id, assignment.id)
-            print(summary)
-            try:
-                pc_graded = float("{:.2f}".format(100*summary["graded"]/(summary["graded"]+summary["ungraded"])))
-            except:
-                pc_graded = None
-
-
+        try:
             Assignment(
                 department = user.department,
                 assignment_name = assignment.name[:128],
@@ -238,13 +192,62 @@ def get_assignments(username):
                 ungraded = summary["ungraded"],
                 pc_graded = pc_graded,
                 not_submitted = summary["not_submitted"],
-                has_overrides = assignment.has_overrides,
+                #types = assignment.submission_types
 
             ).save()
-        print("Assignment saved")
-        #except:
+            print("Assignment saved")
+        except:
+            continue
+
+
+@shared_task
+def get_assignments(username):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    courses = Course.objects.filter(course_department = user.department)
+    
+    for c in courses:
+        #try:
+        course = canvas.get_course(c.course_id)
+
+        assignments = [x for x in course.get_assignments()]
+        for assignment in assignments:
+            try:
+                summary = get_submission_summary(API_URL, API_TOKEN, course.id, assignment.id)
+                print(summary)
+                try:
+                    pc_graded = float("{:.2f}".format(100*summary["graded"]/(summary["graded"]+summary["ungraded"])))
+                except:
+                    pc_graded = None
+
+                
+                Assignment(
+                    department = user.department,
+                    assignment_name = assignment.name[:128],
+                    course = c,
+                    assignment_id = assignment.id,
+                    unlock_at = json_to_datetime(assignment.unlock_at),
+                    lock_at = json_to_datetime(assignment.lock_at),
+                    due_at = json_to_datetime(assignment.due_at),
+                    url = assignment.html_url,
+                    needs_grading_count = assignment.needs_grading_count,
+                    published = assignment.published,
+                    anonymous_grading = assignment.anonymous_grading,
+                    active = True,
+                    graded = summary["graded"],
+                    ungraded = summary["ungraded"],
+                    pc_graded = pc_graded,
+                    not_submitted = summary["not_submitted"],
+                    has_overrides = assignment.has_overrides,
+
+                    ).save()
+                print("Assignment saved")
+            except:
             #print("course doesn't exist")
-            #continue
+                continue
 
 
 @shared_task()
@@ -390,6 +393,7 @@ def is_datetime(dt):
 
 @shared_task()
 def task_get_submissions(username, assignment_ids):
+    print("assignment_ids", assignment_ids)
     for assignment_id in assignment_ids:
         task_get_submission(username, assignment_id)
 
@@ -397,8 +401,8 @@ def task_get_submissions(username, assignment_ids):
 def task_get_submission(username, assignment_id):
     assignment = Assignment.objects.get(assignment_id=assignment_id)
 
-    if assignment.graded == 0:
-        return None
+    #if assignment.graded == 0:
+        #return None
 
     user = UserProfile.objects.get(user__username=username)
     API_URL = user.department.CANVAS_API_URL
