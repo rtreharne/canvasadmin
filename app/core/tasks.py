@@ -94,29 +94,52 @@ def deanonymise_assignments(assignments, API_URL, API_TOKEN):
     return "Done: Anonymising Assignments"
 
 @shared_task
-def get_courses(username, term):
+def get_courses(username, term=None, courses=None):
 
     user = UserProfile.objects.get(user__username=username)
     prefixes = user.department.course_prefixes.replace(" ", "").split(",")
     API_URL = user.department.CANVAS_API_URL
     API_TOKEN = user.department.CANVAS_API_TOKEN
     canvas = Canvas(API_URL, API_TOKEN)
-    print(canvas.get_current_user())
-    for prefix in prefixes:
-        for i in range(101, 1000):
+
+    if courses != None:
+        for c in courses:
             try:
-                course_code = "{}{}-{}".format(prefix.upper(), str(i), str(term))
-                print(course_code)
-                course = canvas.get_course(course_code, use_sis_id=True)
+
+                course = canvas.get_course(c, use_sis_id=True)
+
                 Course(
-                    course_code=course.course_code,
-                    course_id = course.id,
-                    course_name = course.name,
-                    course_department = user.department
-                ).save()
+                        course_code=course.course_code,
+                        course_id = course.id,
+                        course_name = course.name,
+                        course_department = user.department
+                        ).save()
                 print(course.course_code, "saved!")
             except:
                 continue
+        return "Courses Added!"
+
+
+    if term != None:
+        for prefix in prefixes:
+            for i in range(101, 1000):
+                try:
+                    course_code = "{}{}-{}".format(prefix.upper(), str(i), str(term))
+                    print(course_code)
+                    course = canvas.get_course(course_code, use_sis_id=True)
+                    Course(
+                        course_code=course.course_code,
+                        course_id = course.id,
+                        course_name = course.name,
+                        course_department = user.department
+                    ).save()
+                    print(course.course_code, "saved!")
+                except:
+                    continue
+
+@shared_task
+def get_course(username, course):
+    pass
 
 def get_submission_summary(API_URL, API_TOKEN, course_id, assignment_id):
     url = API_URL + "/api/v1/courses/{}/assignments/{}/submission_summary".format(course_id, assignment_id)
@@ -215,6 +238,7 @@ def get_assignments(username):
                 ungraded = summary["ungraded"],
                 pc_graded = pc_graded,
                 not_submitted = summary["not_submitted"],
+                has_overrides = assignment.has_overrides,
 
             ).save()
         print("Assignment saved")
@@ -239,6 +263,17 @@ def update_assignments(username, assignment_ids):
 
     assignments = Assignment.objects.filter(assignment_id__in=assignment_ids)
 
+    # Look for submissions
+    for assignment in assignments:
+        try:
+            submissions = Submission.objects.filter(assignment=assignment)
+            scores = [x.score for x in submissions if x.score != None]
+            average_score = sum(scores)/len(scores)
+            assignment.average_score = round(average_score, 1)
+            assignment.save()
+        except:
+            continue
+
     app_canvas_mapp = {
         "assignment_name": "name",
         "unlock_at": "unlock_at",
@@ -247,7 +282,8 @@ def update_assignments(username, assignment_ids):
         "needs_grading_count": "needs_grading_count",
         "published": "published",
         "anonymous_grading": "anonymous_grading",
-        "type": "submission_types"
+        "type": "submission_types",
+        "has_overrides": "has_overrides",
     }
 
     for a in assignments:
@@ -356,13 +392,6 @@ def is_datetime(dt):
 def task_get_submissions(username, assignment_ids):
     for assignment_id in assignment_ids:
         task_get_submission(username, assignment_id)
-
-    
-    
-    try:
-        submissions = Submission.objects.filter(assignment__assignment_id=assignment_id)
-    except:
-        print("")
 
 @shared_task()
 def task_get_submission(username, assignment_id):
@@ -489,7 +518,7 @@ def task_get_submission(username, assignment_id):
                     submission_id=sub.id,
                     submitted_at=json_to_datetime(sub.submitted_at),
                     assignment=assignment,
-                    course=assigment.course,
+                    course=assignment.course,
                     score=score,
                     integrity_concern = integrity_flag,
                     posted_at = posted_at,

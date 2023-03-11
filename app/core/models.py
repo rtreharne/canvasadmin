@@ -23,7 +23,7 @@ class Assignment(models.Model):
     due_at = models.DateTimeField(null=True, blank=True, verbose_name="Deadline")
     url = models.URLField()
     needs_grading_count = models.IntegerField(null=True, blank=True)
-    published = models.BooleanField(null=True, blank=True)
+    published = models.BooleanField(null=True, blank=True, verbose_name="Published")
     anonymous_grading = models.BooleanField()
     active = models.BooleanField(default=True, verbose_name="Active Flag")
     graded = models.IntegerField(null=True, blank=True, default=0)
@@ -33,6 +33,7 @@ class Assignment(models.Model):
     sas_exam = models.BooleanField(default=False, verbose_name="SAS Exam")
     average_score = models.FloatField(null=True, blank=True, verbose_name="Average Score (%)")
     type = models.CharField(max_length=128, null=True, blank=True)
+    has_overrides = models.BooleanField(default=False, verbose_name="Overrides")
 
     def __str__(self):
         return self.assignment_name
@@ -86,6 +87,14 @@ class Staff(models.Model):
 
     def __str__(self):
         return self.name
+    
+class Date(models.Model):
+    label = models.CharField(max_length=128)
+    start = models.DateField(null=True, blank=True)
+    finish = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return self.label
 
 
 

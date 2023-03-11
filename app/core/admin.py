@@ -2,15 +2,19 @@ from django.contrib import admin
 from django.utils.html import format_html
 from accounts.models import User, UserProfile
 from canvasapi import Canvas
-from core.models import Sample, Course, Assignment, Student, Submission, Staff
+from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
 from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines
 from django.contrib.admin import DateFieldListFilter
-from .tasks import update_assignments
+from .tasks import update_assignments, get_courses
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
-from .filters import AssignmentDateFilter
+from .filters import AssignmentDateFilter, SubmissionDateFilter
 from datetime import datetime
+from .forms import CsvImportForm
+from django.urls import path
+import csv
+from django.shortcuts import render, redirect
 
 class StaffAdmin(admin.ModelAdmin):
     list_display = ("name", "items_graded", "courses_graded_in",)
@@ -30,6 +34,36 @@ class CourseAdmin(admin.ModelAdmin):
     )
 
     actions = ["admin_get_assignments_by_course",]
+
+    change_list_template = "core/courses_changelist.html"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path('import-csv/', self.import_csv),
+        ]
+        return my_urls + urls
+
+    def import_csv(self, request):
+        if request.method == "POST":
+            file = request.FILES["csv_file"]
+
+            decoded_file = file.read().decode('utf-8').splitlines()
+            reader = csv.reader(decoded_file)
+
+            data = []
+            [data.extend(x) for x in reader]
+
+            get_courses.delay(request.user.username, courses=data)
+
+            
+            self.message_user(request, "Your csv file has been imported. Your courses will appear shortly. Keep refreshing.")
+            return redirect("..")
+        form = CsvImportForm()
+        payload = {"form": form}
+        return render(
+            request, "csv_form.html", payload
+        )
 
     def get_queryset(self, request):
         user_profile = UserProfile.objects.get(user=request.user)
@@ -81,7 +115,6 @@ class SecondsLateFilter(admin.SimpleListFilter):
             return queryset.filter(seconds_late__gt=3600*24*5)
         
         return queryset
-
 
 
 class ScoreFilter(admin.SimpleListFilter):
@@ -160,6 +193,7 @@ class SubmissionAdmin(admin.ModelAdmin):
                  "assignment__assignment_name",
                  "assignment__due_at",
                  "student__sortable_name",
+                 SubmissionDateFilter,
                  ScoreFilter,
                  SecondsLateFilter,
                  IntegrityConcernFilter,
@@ -216,7 +250,6 @@ class SubmissionAdmin(admin.ModelAdmin):
             messages.info(request, "Syncing submissions. This action is not instantaneous. Check back later.")
 
     
-
 class GradedFilter(admin.SimpleListFilter):
     title = 'Grading Status'
     parameter_name = 'pc_graded'
@@ -250,12 +283,13 @@ class AssignmentAdmin(admin.ModelAdmin):
         "assignment_link",
         "link",
         "due_at",
+        "has_overrides",
         "graded_pc",
         "average_score",
         "anonymous_grading",
         "published",
-        "active",
-        "sas_exam"
+        #"active",
+        #"sas_exam"
     )
 
     #list_filter = ('')
@@ -264,7 +298,7 @@ class AssignmentAdmin(admin.ModelAdmin):
 
     actions = ["admin_anonymise", "admin_deanonymise", export_as_csv_action(), "sync_assignments", "get_submissions", "task_add_five_minutes_to_deadlines"]
 
-    list_editable = ('active', 'sas_exam')
+    #list_editable = ('active', 'sas_exam')
 
     search_fields = ('assignment_name', 'course__course_code')
 
@@ -273,13 +307,12 @@ class AssignmentAdmin(admin.ModelAdmin):
                    'assignment_name',
                    GradedFilter,
                    'active',
-                   'due_at',
                    'sas_exam',
                    'published',
-                    AssignmentDateFilter)
+                   AssignmentDateFilter,
+                   'has_overrides')
 
-
-
+    
     def get_queryset(self, request):
         user_profile = UserProfile.objects.get(user=request.user)
         queryset = Assignment.objects.filter(course__course_department=user_profile.department)
@@ -296,6 +329,7 @@ class AssignmentAdmin(admin.ModelAdmin):
     assignment_link.admin_order_field = "assignment_name"
     link.short_description = "Course"
     link.admin_order_field = 'ascending'
+
         
     def graded_pc(self, obj):
         submissions = Submission.objects.filter(assignment = obj)
@@ -364,6 +398,8 @@ class AssignmentAdmin(admin.ModelAdmin):
             assignment_ids = [x.assignment_id for x in queryset]
         
             update_assignments.delay(request.user.username, assignment_ids)
+            messages.info(request, "Syncing Assignments. This action is not instantaneous. Please check back later.")
+
     
     @admin.action(description="Get submissions")
     def get_submissions(modeladmin, request, queryset):
@@ -378,9 +414,13 @@ class AssignmentAdmin(admin.ModelAdmin):
             assignment_ids = [x.assignment_id for x in queryset]
             add_five_minutes_to_deadlines.delay(request.user.username, assignment_ids)
             messages.info(request, "Adding five minutes to deadlines. This action is not instantaneous. Please check back later.")
+
+class DateAdmin(admin.ModelAdmin):
+    list_display = ("label", "start", "finish")
             
 
 admin.site.register(Assignment, AssignmentAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Submission, SubmissionAdmin)
 admin.site.register(Student, StudentAdmin)
+admin.site.register(Date, DateAdmin)
