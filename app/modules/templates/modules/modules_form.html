@@ -1,0 +1,14 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+    <div>
+        <form action="." method="POST">
+            {{ form.as_p }}
+            {% csrf_token %}
+
+                <button type="submit">Find Modules</button>
+        </form>
+    </div>
+    <br />
+
+{% endblock %}

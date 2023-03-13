@@ -291,91 +291,98 @@ def update_assignments(username, assignment_ids):
 
     for a in assignments:
         # get canvas assignment
-        #try:
+
         print(a.course.course_id, a.assignment_id)
-        canvas_assignment = canvas.get_course(a.course.course_id).get_assignment(a.assignment_id)
-        for key, value in app_canvas_mapp.items(): 
-                
+        
+        try:
+            canvas_assignment = canvas.get_course(a.course.course_id).get_assignment(a.assignment_id)
+            assignment_found = True
+        except:
+            assignment_found = False
 
-            datetime = is_datetime(canvas_assignment.__dict__.get(key, None))
-
-            if datetime:
-                if datetime != a.__dict__[key].replace(tzinfo=None):
+        if assignment_found:
+            for key, value in app_canvas_mapp.items(): 
                     
-                    print(key, "updated")
-                    
-                    AssignmentLog(
-                        assignment=a.assignment_name,
-                        course=a.course,
-                        request="UPDATE",
-                        field=key,
-                        from_value=str(a.__dict__[key]),
-                        to_value=str(datetime),
-                        department=user.department
-                    ).save()
 
-                    print(key, value, datetime, a.__dict__[key].replace(tzinfo=None))
-                    setattr(a, key, datetime)
-                    try:    
-                        a.pc_ungraded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
-                    except:
-                        a.pc_ungraded = 0
-                    a.save()
-            else:
-                if canvas_assignment.__dict__[value] != a.__dict__[key]:
-                    if key == "needs_grading_count":
-                        summary = get_submission_summary(API_URL, API_TOKEN, course_id=a.course.course_id, assignment_id=a.assignment_id)
+                datetime = is_datetime(canvas_assignment.__dict__.get(key, None))
 
-                        try:
-                            pc_graded = float("{:.2f}".format(100*summary["graded"]/(summary["graded"]+summary["ungraded"])))
-                        except:
-                            pc_graded = None
+                if datetime:
+                    if datetime != a.__dict__[key].replace(tzinfo=None):
                         
-                        a.graded = summary["graded"]
-                        a.ungraded = summary["ungraded"]
-                        a.not_submitted = summary["not_submitted"]
+                        print(key, "updated")
                         
                         AssignmentLog(
-                        assignment=canvas_assignment.__dict__["name"],
-                        course=a.course,
-                        request="UPDATE",
-                        field=key,
-                        from_value=str(a.__dict__["pc_graded"]),
-                        to_value=str(pc_graded),
-                        department=user.department
+                            assignment=a.assignment_name,
+                            course=a.course,
+                            request="UPDATE",
+                            field=key,
+                            from_value=str(a.__dict__[key]),
+                            to_value=str(datetime),
+                            department=user.department
                         ).save()
 
-                        a.pc_graded = pc_graded
+                        print(key, value, datetime, a.__dict__[key].replace(tzinfo=None))
+                        setattr(a, key, datetime)
+                        try:    
+                            a.pc_ungraded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
+                        except:
+                            a.pc_ungraded = 0
                         a.save()
+                else:
+                    if canvas_assignment.__dict__[value] != a.__dict__[key]:
+                        if key == "needs_grading_count":
+                            summary = get_submission_summary(API_URL, API_TOKEN, course_id=a.course.course_id, assignment_id=a.assignment_id)
+
+                            try:
+                                pc_graded = float("{:.2f}".format(100*summary["graded"]/(summary["graded"]+summary["ungraded"])))
+                            except:
+                                pc_graded = None
+                            
+                            a.graded = summary["graded"]
+                            a.ungraded = summary["ungraded"]
+                            a.not_submitted = summary["not_submitted"]
+                            
+                            AssignmentLog(
+                            assignment=canvas_assignment.__dict__["name"],
+                            course=a.course,
+                            request="UPDATE",
+                            field=key,
+                            from_value=str(a.__dict__["pc_graded"]),
+                            to_value=str(pc_graded),
+                            department=user.department
+                            ).save()
+
+                            a.pc_graded = pc_graded
+                            a.save()
 
 
 
 
-                    if key == "assignment_name":
-                        logs = AssignmentLog.objects.filter(assignment=a, course=a.course)
-                        for log in logs:
-                            setattr(log, "assignment", canvas_assignment.__dict__["name"])
-                            log.save()
-                        pass
-                    
-                    print(key, "updated")
-                    AssignmentLog(
-                        assignment=canvas_assignment.__dict__["name"],
-                        course=a.course,
-                        request="UPDATE",
-                        field=key,
-                        from_value=str(a.__dict__[key]),
-                        to_value=str(canvas_assignment.__dict__[value]),
-                        department=user.department
-                        ).save()
+                        if key == "assignment_name":
+                            logs = AssignmentLog.objects.filter(assignment=a, course=a.course)
+                            for log in logs:
+                                setattr(log, "assignment", canvas_assignment.__dict__["name"])
+                                log.save()
+                            pass
+                        
+                        print(key, "updated")
+                        AssignmentLog(
+                            assignment=canvas_assignment.__dict__["name"],
+                            course=a.course,
+                            request="UPDATE",
+                            field=key,
+                            from_value=str(a.__dict__[key]),
+                            to_value=str(canvas_assignment.__dict__[value]),
+                            department=user.department
+                            ).save()
 
-                    print(key, value, canvas_assignment.__dict__[value], a.__dict__[key])
-                    setattr(a, key, canvas_assignment.__dict__[value])
-                    try:    
-                        a.pc_ungraded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
-                    except:
-                        a.pc_ungraded = 0
-                    a.save()
+                        print(key, value, canvas_assignment.__dict__[value], a.__dict__[key])
+                        setattr(a, key, canvas_assignment.__dict__[value])
+                        try:    
+                            a.pc_ungraded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
+                        except:
+                            a.pc_ungraded = 0
+                        a.save()
                     
                     
         #except:
@@ -704,7 +711,35 @@ def datetime_to_json(dt):
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
     
     
+@shared_task
+def task_update_assignment_deadlines(username, assignment_pks, time_string):
+    for assignment_pk in assignment_pks:
+        task_update_assignment_deadline(username, assignment_pk, time_string)
+    return "Done"
 
+@shared_task
+def task_update_assignment_deadline(username, assignment_id, time_string):
+        
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    canvas = Canvas(API_URL, API_TOKEN)
+    
+    assignment = Assignment.objects.get(pk=assignment_id)
+
+    canvas_course = canvas.get_course(assignment.course.course_id)
+    canvas_assignment = canvas_course.get_assignment(assignment.assignment_id)
+    try:    
+        canvas_assignment.edit(assignment={"due_at": time_string})
+    except:
+        canvas_assignment.edit(assignment={"due_at": time_string, "lock_at": time_string})
+
+    
+    assignment.due_at = json_to_datetime(time_string)
+
+    assignment.save()
+    print("assignment saved!")
 
 
 

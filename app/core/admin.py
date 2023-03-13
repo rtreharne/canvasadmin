@@ -5,13 +5,13 @@ from canvasapi import Canvas
 from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
 from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines
 from django.contrib.admin import DateFieldListFilter
-from .tasks import update_assignments, get_courses
+from .tasks import update_assignments, get_courses, task_update_assignment_deadlines
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
 from .filters import AssignmentDateFilter, SubmissionDateFilter
 from datetime import datetime
-from .forms import CsvImportForm
+from .forms import CsvImportForm, AssignmentDatesUpdateForm
 from django.urls import path
 import csv
 from django.shortcuts import render, redirect
@@ -295,7 +295,7 @@ class AssignmentAdmin(admin.ModelAdmin):
 
     #readonly_fields = ('assignment_name','course', 'assignment_id', 'url', 'unlock_at', 'due_at', 'lock_at', 'needs_grading_count', 'published', 'anonymous_grading')
 
-    actions = ["admin_anonymise", "admin_deanonymise", export_as_csv_action(), "sync_assignments", "get_submissions", "task_add_five_minutes_to_deadlines"]
+    actions = ["admin_anonymise", "admin_deanonymise", export_as_csv_action(), "sync_assignments", "get_submissions", "task_add_five_minutes_to_deadlines", "update_assignment_deadlines"]
 
     #list_editable = ('active', 'sas_exam')
 
@@ -310,6 +310,32 @@ class AssignmentAdmin(admin.ModelAdmin):
                    'published',
                    AssignmentDateFilter,
                    'has_overrides')
+    
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path('update-assignment-deadline/', self.update_assignment_deadlines),
+        ]
+        return my_urls + urls
+    
+    def update_assignment_deadlines(self, request, queryset):
+        if 'apply' in request.POST:
+
+            module_pks = request.POST.get("_selected_action")
+            unlock_date = request.POST.get("unlock_date", None)
+            unlock_time = request.POST.get("unlock_time", None)
+            publish = request.POST.get("force_publish", None)
+
+            time_string = unlock_date + "T" + unlock_time + ":00Z"
+            assignment_pks = [x.id for x in queryset]
+            task_update_assignment_deadlines.delay(request.user.username, assignment_pks, time_string)
+            self.message_user(request, "Your request has been submitted. Your assignments will update shortly. Keep refreshing.")
+            return redirect(".")
+        form = AssignmentDatesUpdateForm()
+        payload = {'form': form, 'assignments': queryset}
+        return render(
+            request, "core/assignment_dates_update_form.html", payload
+        )
 
     
     def get_queryset(self, request):
