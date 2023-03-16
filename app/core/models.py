@@ -24,7 +24,7 @@ class Assignment(models.Model):
     url = models.URLField()
     needs_grading_count = models.IntegerField(null=True, blank=True)
     published = models.BooleanField(null=True, blank=True, verbose_name="Published")
-    anonymous_grading = models.BooleanField()
+    anonymous_grading = models.BooleanField(verbose_name="Anonymous Grading")
     active = models.BooleanField(default=True, verbose_name="Active Flag")
     graded = models.IntegerField(null=True, blank=True, default=0)
     ungraded = models.IntegerField(null=True, blank=True, default=0)

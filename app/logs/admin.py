@@ -19,9 +19,9 @@ class AssignmentLogAdmin(admin.ModelAdmin):
 
     readonly_fields = ('assignment', 'request', 'from_value', 'to_value', 'field', 'course')
 
-    search_fields = ('course', 'request')
+    search_fields = ('course', 'request',)
 
-    list_filter = ('assignment', 'course', 'timestamp')
+    list_filter = ('assignment', 'course', 'timestamp', 'field')
 
     actions = [export_as_csv_action()]
 

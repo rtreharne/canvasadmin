@@ -1,19 +1,15 @@
-# django-docker-compose-deployment
+# Canvas Admin
 
-This is a template dockerised Django project configured for use with:
+This is an open-source tool built by Dr. Robert Treharne and Jack Foster at the University of Liverpool to help teachers/administrators manage Canvas assignments and submissions.
 
-+ PostgreSQL
-+ Nginx for file serving
-+ Celery, Beat and Redis
-
-Guidance on build for both local development and production (Amazon AWS EC2) below.
+Guidance on how to build for both local development and production (Amazon AWS EC2) below.
 
 ## Guidance
 
 ### Step 1. Clone repo
 
 ```bash
-git clone git@github.com:rtreharne/django-docker-compose-deployment.git
+git clone git@github.com:rtreharne/canvasadmin.git
 ```
 
 If you need to configure your ssh key then read <a href="https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account" target="_blank">this</a>.
@@ -40,39 +36,16 @@ docker-compose build app
 ```
 
 ```bash
-docker-compose up app
+docker-compose up
 ```
 To check open up http://127.0.0.1:8000/
 
 ### Step 4 - Create a superuser
 ```bash
-docker-compose run --rm app sh -c "python manage.py createsuperuser"
+docker-compose run --user root --rm app sh -c "python manage.py createsuperuser"
 ```
-Run `docker-compose up app` again and navigate to `/admin` to login to Django admin.
+Run `docker-compose up app` again to re-start local server.
 
-### Step 5 - Make sure your beat scheduler is running
-
-This command creates a new container to run in the background.
-
-```bash
-docker-compose run -d --rm app sh -c "celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
-```
-
-### Step 5 - Development
-
-Develop your app locally. Your changes should be reflected on your local server
-
-### Step 6 - Test deployment locally
-
-```bash
-docker-compose -f docker-compose-deploy.yml build
-```
-```bash
-docker-compose -f docker-compose-deploy.yml run -d --rm app sh -c "celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
-```
-```bash
-docker-compose -f docker-compose-deploy.yml up
-```
 
 ### Step 7 - Deploy to AWS EC2
 
@@ -156,14 +129,9 @@ Build and deploy.
 docker-compose -f docker-compose-deploy.yml build
 ```
 
-Start Beat scheduler container (not in docker-compose-deploy.yml - couln't configure it that way!). You should only have to run this once (unless you down the container).
-```bash
-docker-compose -f docker-compose-deploy.yml run -d --rm app sh -c "celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
-```
-
 Create admin superuser
 ```bash
-docker-compose -f docker-compose-deploy.yml run --rm app sh -c "python manage.py createsuperuser"
+docker-compose -f docker-compose-deploy.yml run --user root --rm app sh -c "python manage.py createsuperuser"
 ```
 
 Start the container (use -d flag at end to run in background).

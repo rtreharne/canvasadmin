@@ -305,11 +305,12 @@ class AssignmentAdmin(admin.ModelAdmin):
                    'course__course_code',
                    'assignment_name',
                    GradedFilter,
-                   'active',
-                   'sas_exam',
+                   #'active',
+                   #'sas_exam',
                    'published',
                    AssignmentDateFilter,
-                   'has_overrides')
+                   'has_overrides',
+                   'anonymous_grading')
     
     def get_urls(self):
         urls = super().get_urls()

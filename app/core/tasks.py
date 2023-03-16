@@ -40,6 +40,7 @@ def anonymise_assignments(assignments, API_URL, API_TOKEN):
             print("Couldn't update canvas")
 
             aobject = Assignment.objects.get(assignment_id=a["assignment_id"])
+            department = aobject.department
             aobject.anonymous_grading=False
             aobject.save()
 
@@ -50,7 +51,7 @@ def anonymise_assignments(assignments, API_URL, API_TOKEN):
                             field="anonymous_grading",
                             from_value=False,
                             to_value=True,
-                            department=a.course.course_department
+                            department=department
                         ).save()
             
 
@@ -77,6 +78,7 @@ def deanonymise_assignments(assignments, API_URL, API_TOKEN):
             print("Couldn't update canvas")
 
             aobject = Assignment.objects.get(assignment_id=a["assignment_id"])
+            department = aobject.department
             aobject.anonymous_grading=True
             aobject.save()
 
@@ -87,7 +89,7 @@ def deanonymise_assignments(assignments, API_URL, API_TOKEN):
                             field="anonymous_grading",
                             from_value=True,
                             to_value=False,
-                            department=a.course.course_department
+                            department=department
                         ).save()
             
 
