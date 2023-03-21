@@ -72,6 +72,8 @@ class Submission(models.Model):
     turnitin_url = models.URLField(null=True, blank=True)
     integrity_concern = models.CharField(max_length=128, null=True, blank=True, default=None, verbose_name="Integrity Flag")
     html_url = models.URLField(null=True, blank=True)
+    marker = models.CharField(max_length=256, null=True, blank=True)
+    marker_email = models.EmailField(null=True, blank=True)
     
     def __str__(self):
         return self.student.sortable_name

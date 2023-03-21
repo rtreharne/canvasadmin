@@ -743,7 +743,24 @@ def task_update_assignment_deadline(username, assignment_id, time_string):
     assignment.save()
     print("assignment saved!")
 
+@shared_task
+def task_assign_markers(username, data):
+    for row in data:
+        assignment = Assignment.objects.get(assignment_id = row["assignment_id"])
+        submissions = Submission.objects.filter(assignment=assignment)
+        print("submissions:", len(submissions))
+        
+        try:
+            submission = Submission.objects.get(student__canvas_id = int(row["student_id"]), assignment=assignment)
+            submission.marker = row["marker"]
+            submission.marker_email = row["marker_email"]
+            submission.save()
 
+        except:
+            continue
+
+    return "Markers Assigned!"
+    
 
 
     

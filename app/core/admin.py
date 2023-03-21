@@ -5,7 +5,7 @@ from canvasapi import Canvas
 from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
 from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines
 from django.contrib.admin import DateFieldListFilter
-from .tasks import update_assignments, get_courses, task_update_assignment_deadlines
+from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
@@ -18,6 +18,8 @@ from django.shortcuts import render, redirect
 
 class StaffAdmin(admin.ModelAdmin):
     list_display = ("name", "items_graded", "courses_graded_in",)
+
+    list_filter = ("name",)
 
 admin.site.register(Staff, StaffAdmin)
 
@@ -181,7 +183,7 @@ class SubmissionAdmin(admin.ModelAdmin):
         "course",
         "submission_link",
         "score",
-        "graded_by",
+        "marker_grader",
         "submitted_at",
         "days_late",
         "posted_at",
@@ -204,6 +206,53 @@ class SubmissionAdmin(admin.ModelAdmin):
 
     actions = ["sync_submissions", export_as_csv_action(),]
 
+    change_list_template = "core/submissions_changelist.html"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path('assign-markers/', self.import_csv),
+        ]
+        return my_urls + urls
+
+    def import_csv(self, request):
+        if request.method == "POST":
+            file = request.FILES["csv_file"]
+
+            decoded_file = file.read().decode('utf-8').splitlines()
+            reader = csv.reader(decoded_file)
+
+            print(reader)
+
+            data = []
+            
+            [data.append(x) for x in reader]
+            headers = data[0]
+            data = data[1:]
+            print(headers)
+
+            rows = []
+
+            for row in data:
+                rows.append(
+                    {x: y for x, y in zip(headers, row)}
+                )
+
+            task_assign_markers(request.user.username, data=rows)
+
+
+
+            #get_courses.delay(request.user.username, courses=data)
+
+            
+            self.message_user(request, "Your csv file has been imported. Your courses will appear shortly. Keep refreshing.")
+            return redirect("..")
+        form = CsvImportForm()
+        payload = {"form": form}
+        return render(
+            request, "csv_form.html", payload
+        )
+
     def student_link(self, obj):
         return format_html('<a href="?student__sortable_name={}">{}</a>'.format(obj.student, obj.student))
 
@@ -218,6 +267,16 @@ class SubmissionAdmin(admin.ModelAdmin):
                 )
         else:
             return obj.assignment.assignment_name
+        
+    def marker_grader(self, obj):
+        if obj.marker != None:
+            return format_html('<a href="mailto:{}">{}</a>'.format(obj.marker_email, obj.marker))
+        elif obj.graded_by == None:
+            return "-"
+        else:
+            return obj.graded_by
+        
+        return "{}/{}".format(obj.marker, obj.graded_by)
 
     def similarity_link(self, obj):
         if obj.similarity_score != None:
@@ -231,6 +290,8 @@ class SubmissionAdmin(admin.ModelAdmin):
 
     similarity_link.short_description = "Similarity Score (%)"
     similarity_link.admin_order_field = "similarity_score"
+
+    marker_grader.short_description = "Marker"
     
     submission_link.short_description = "Submission"
     submission_link.admin_order_field = "assignment"
