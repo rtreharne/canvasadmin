@@ -125,6 +125,7 @@ class ScoreFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         return (
+            ('ungraded', 'Not Graded'),
             ('zero', 'Zero'),
             ('greater_than_zero', 'Greater than zero'),
             ('less_than_forty', 'Less than 40'),
@@ -142,6 +143,8 @@ class ScoreFilter(admin.SimpleListFilter):
             return queryset.filter(score__lt=40)
         elif value == 'less_than_fifty':
             return queryset.filter(score__lt=50)
+        elif value == 'ungraded':
+            return queryset.filter(score=None)
         
         return queryset
 
@@ -252,6 +255,11 @@ class SubmissionAdmin(admin.ModelAdmin):
         return render(
             request, "csv_form.html", payload
         )
+    
+    def get_queryset(self, request):
+        user_profile = UserProfile.objects.get(user=request.user)
+        queryset = Submission.objects.filter(course__course_department=user_profile.department)
+        return queryset
 
     def student_link(self, obj):
         return format_html('<a href="?student__sortable_name={}">{}</a>'.format(obj.student, obj.student))
