@@ -481,12 +481,17 @@ def task_get_submission(username, assignment_id):
                     }
                     
                     integrity_flag = None
+                    staff_exists = True
 
                     if sub.grader_id != None:
                         try:
                             staff = Staff.objects.get(canvas_id=sub.grader_id)
                             graded_by = staff.name
                         except:
+                            staff_exists = False
+                    
+                    if not staff_exists:
+                        try:
                             if int(sub.grader_id) > 0:
                                 canvas_user = canvas.get_user(sub.grader_id)
                                 staff = Staff(
@@ -497,6 +502,8 @@ def task_get_submission(username, assignment_id):
                                 graded_by = canvas_user.sortable_name
                             else:
                                 graded_by = "Auto Graded"
+                        except:
+                            graded_by = None
                     else:
                         graded_by = None
                     
