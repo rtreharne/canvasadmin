@@ -427,12 +427,13 @@ class AssignmentAdmin(admin.ModelAdmin):
 
         
     def graded_pc(self, obj):
+        print(obj.__dict__)
         submissions = Submission.objects.filter(assignment = obj)
         if len(submissions) > 0:
             graded_string = ""
             if obj.pc_graded != None:
                 graded_string = obj.pc_graded
-            url = "/core/submission/?assignment__assignment_name={}".format(obj.assignment_name)
+            url = "/core/submission/?assignment_id={}".format(obj.id)
             return format_html("<a href='{}'>{}</a>".format(url, graded_string))
         return obj.pc_graded
     
