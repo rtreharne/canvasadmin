@@ -424,137 +424,143 @@ def task_get_submission(username, assignment_id):
     API_URL = user.department.CANVAS_API_URL
     API_TOKEN = user.department.CANVAS_API_TOKEN
     canvas = Canvas(API_URL, API_TOKEN)
+    assessment_exists = True
 
-    c = canvas.get_course(assignment.course.course_id)
-    a = c.get_assignment(assignment.assignment_id)
+    try:
+        c = canvas.get_course(assignment.course.course_id)
+        a = c.get_assignment(assignment.assignment_id)
+    except:
+        assessment_exists = False
 
-    submissions = [x for x in a.get_submissions(include=["assignment", "user", "submission_comments", "full_rubric_assessment"])]
+    if assessment_exists:
 
-    missing_students = False
-    enrollments = False
+        submissions = [x for x in a.get_submissions(include=["assignment", "user", "submission_comments", "full_rubric_assessment"])]
 
-    for sub in submissions:
-        try:
-            student = Student.objects.get(canvas_id=sub.user["id"])
-        except:
-            missing_students=True
+        missing_students = False
+        enrollments = False
 
-    
-    if missing_students:
-        enrollments = [x for x in c.get_enrollments() if x.type=="StudentEnrollment"]
-
-        for e in enrollments:
+        for sub in submissions:
             try:
-                
-                student = Student.objects.get(canvas_id=e.user_id)
-                print("student exists!")
+                student = Student.objects.get(canvas_id=sub.user["id"])
             except:
-                
-                new_student = Student(
-                    sortable_name=e.user["sortable_name"],
-                    canvas_id=int(e.user_id),
-                    login_id=e.user["login_id"],
-                    sis_user_id=e.user["sis_user_id"]
-                )
-                new_student.save()
+                missing_students=True
 
-    for sub in submissions:
+        
+        if missing_students:
+            enrollments = [x for x in c.get_enrollments() if x.type=="StudentEnrollment"]
 
-        # Does submission already exist?
-        new_submission = Submission.objects.filter(submission_id=sub.id)
-
-        if len(new_submission) == 0:
-
-            if sub.submitted_at != None:
-
-                # look for category concerns
-                concerns = {
-                    "category a": "A",
-                    "category b": "B",
-                    "category c": "C, D or E"
-                }
-                
-                integrity_flag = None
-
-                if sub.grader_id != None:
-                    try:
-                        staff = Staff.objects.get(canvas_id=sub.grader_id)
-                        graded_by = staff.name
-                    except:
-                        if int(sub.grader_id) > 0:
-                            canvas_user = canvas.get_user(sub.grader_id)
-                            staff = Staff(
-                                name=canvas_user.sortable_name,
-                                canvas_id=sub.grader_id
-                            ).save()
-                            
-                            graded_by = canvas_user.sortable_name
-                        else:
-                            graded_by = "Auto Graded"
-                else:
-                    graded_by = None
-                
-                try: 
+            for e in enrollments:
+                try:
                     
-                    for key in concerns:
-                        rubric_data = sub.full_rubric_assessment["data"]
-                        for item in rubric_data:
-                            if key in item['description'].lower():
-                                integrity_flag = concerns[key]
+                    student = Student.objects.get(canvas_id=e.user_id)
+                    print("student exists!")
                 except:
+                    
+                    new_student = Student(
+                        sortable_name=e.user["sortable_name"],
+                        canvas_id=int(e.user_id),
+                        login_id=e.user["login_id"],
+                        sis_user_id=e.user["sis_user_id"]
+                    )
+                    new_student.save()
+
+        for sub in submissions:
+
+            # Does submission already exist?
+            new_submission = Submission.objects.filter(submission_id=sub.id)
+
+            if len(new_submission) == 0:
+
+                if sub.submitted_at != None:
+
+                    # look for category concerns
+                    concerns = {
+                        "category a": "A",
+                        "category b": "B",
+                        "category c": "C, D or E"
+                    }
+                    
                     integrity_flag = None
 
-                try:
-                    score=float('{0:.2f}'.format(sub.score))
-                except:
-                    score=None
-
-                try:
-                    posted_at = json_to_datetime(sub.posted_at)
-                except:
-                    posted_at = None
-
-                try:
-      
-                    turnitin_data_key = list(sub.turnitin_data.keys())[0]
-          
-                    similarity_score = float(sub.turnitin_data[turnitin_data_key]["similarity_score"])
-        
-                    turnitin_url = API_URL + sub.turnitin_data[turnitin_data_key]["report_url"]
-           
-                except:
-                    similarity_score = None
-                    turnitin_url = None
-
-                try:
-                    rubric = sub.full_rubric_assessment
-                except:
-                    rubric=None
-
-                try:
-                    new_submission =Submission(
-                    student=Student.objects.get(canvas_id=sub.user_id),
-                    sis_user_id=Student.objects.get(canvas_id=sub.user_id).sis_user_id,
-                    submission_id=sub.id,
-                    submitted_at=json_to_datetime(sub.submitted_at),
-                    assignment=assignment,
-                    course=assignment.course,
-                    score=score,
-                    integrity_concern = integrity_flag,
-                    posted_at = posted_at,
-                    similarity_score = similarity_score,
-                    turnitin_url = turnitin_url,
-                    graded_by = graded_by,
-                    comments = sub.submission_comments,
-                    rubric = rubric,
-                    seconds_late = sub.seconds_late,
-                    html_url="{}/courses/{}/gradebook/speed_grader?assignment_id={}&student_id={}".format(API_URL, assignment.course.course_id, assignment.assignment_id, sub.user_id)
+                    if sub.grader_id != None:
+                        try:
+                            staff = Staff.objects.get(canvas_id=sub.grader_id)
+                            graded_by = staff.name
+                        except:
+                            if int(sub.grader_id) > 0:
+                                canvas_user = canvas.get_user(sub.grader_id)
+                                staff = Staff(
+                                    name=canvas_user.sortable_name,
+                                    canvas_id=sub.grader_id
+                                ).save()
+                                
+                                graded_by = canvas_user.sortable_name
+                            else:
+                                graded_by = "Auto Graded"
+                    else:
+                        graded_by = None
                     
-                    )
-                    new_submission.save()
-                    print("submission_added")
-                except:
-                    print("submission not added")
+                    try: 
+                        
+                        for key in concerns:
+                            rubric_data = sub.full_rubric_assessment["data"]
+                            for item in rubric_data:
+                                if key in item['description'].lower():
+                                    integrity_flag = concerns[key]
+                    except:
+                        integrity_flag = None
+
+                    try:
+                        score=float('{0:.2f}'.format(sub.score))
+                    except:
+                        score=None
+
+                    try:
+                        posted_at = json_to_datetime(sub.posted_at)
+                    except:
+                        posted_at = None
+
+                    try:
+        
+                        turnitin_data_key = list(sub.turnitin_data.keys())[0]
+            
+                        similarity_score = float(sub.turnitin_data[turnitin_data_key]["similarity_score"])
+            
+                        turnitin_url = API_URL + sub.turnitin_data[turnitin_data_key]["report_url"]
+            
+                    except:
+                        similarity_score = None
+                        turnitin_url = None
+
+                    try:
+                        rubric = sub.full_rubric_assessment
+                    except:
+                        rubric=None
+
+                    try:
+                        new_submission =Submission(
+                        student=Student.objects.get(canvas_id=sub.user_id),
+                        sis_user_id=Student.objects.get(canvas_id=sub.user_id).sis_user_id,
+                        submission_id=sub.id,
+                        submitted_at=json_to_datetime(sub.submitted_at),
+                        assignment=assignment,
+                        course=assignment.course,
+                        score=score,
+                        integrity_concern = integrity_flag,
+                        posted_at = posted_at,
+                        similarity_score = similarity_score,
+                        turnitin_url = turnitin_url,
+                        graded_by = graded_by,
+                        comments = sub.submission_comments,
+                        rubric = rubric,
+                        seconds_late = sub.seconds_late,
+                        html_url="{}/courses/{}/gradebook/speed_grader?assignment_id={}&student_id={}".format(API_URL, assignment.course.course_id, assignment.assignment_id, sub.user_id)
+                        
+                        )
+                        new_submission.save()
+                        print("submission_added")
+                    except:
+                        print("submission not added")
 
 
 @shared_task()
