@@ -248,7 +248,7 @@ class SubmissionAdmin(admin.ModelAdmin):
             #get_courses.delay(request.user.username, courses=data)
 
             
-            self.message_user(request, "Your csv file has been imported. Your courses will appear shortly. Keep refreshing.")
+            self.message_user(request, "Your csv file has been imported. Your submissions will be updates shortly. Keep refreshing.")
             return redirect("..")
         form = CsvImportForm()
         payload = {"form": form}

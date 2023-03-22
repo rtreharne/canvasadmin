@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'accounts',
     'logs',
     'crispy_forms',
-    'modules'
+    'modules',
+    'extensions'
     
 ]
 
