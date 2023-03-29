@@ -796,7 +796,6 @@ def task_apply_zero_score(username, submission_pk):
 
         canvas_submission = assignment.get_submission(user=int(submission.student.canvas_id))
         
-        print(submission.seconds_late, submission.entered_score)
         if canvas_submission.entered_score !=0 and canvas_submission.seconds_late >= 3600*24*5:
             print("Applying zero score")
 
