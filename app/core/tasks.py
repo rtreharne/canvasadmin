@@ -775,6 +775,35 @@ def task_assign_markers(username, data):
     return "Markers Assigned!"
     
 
+@shared_task
+def task_apply_zero_scores(username, submission_pks):
+    for submission_pk in submission_pks:
+        task_apply_zero_score(username, submission_pk)
+    return "Done"
+
+def task_apply_zero_score(username, submission_pk):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    submission = Submission.objects.get(pk=submission_pk)
+
+    canvas = Canvas(API_URL, API_TOKEN)
+    course = canvas.get_course(submission.course.course_id)
+    assignment = course.get_assignment(submission.assignment.assignment_id)
+    canvas_submission = assignment.get_submission(user=int(submission.student.canvas_id), include=["user"])
+    
+    print(submission.seconds_late, submission.entered_score)
+    if canvas_submission.entered_score !=0 and canvas_submission.seconds_late >= 3600*24*5:
+          print("Applying zero score")
+
+          text_comment= 'This submission has been awarded a score of 0 because it is more than 5 days late. If you believe this is incorrect please \n contact SLS-Assessment@liverpool.ac.uk. The original score for this submission was {}'.format(submission.entered_score) 
+          canvas_submission.edit(submission={'posted_grade':0},comment={'text_comment':text_comment})
+
+    
+
+
+
 
     
 

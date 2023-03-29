@@ -5,7 +5,7 @@ from canvasapi import Canvas
 from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
 from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines
 from django.contrib.admin import DateFieldListFilter
-from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers
+from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
@@ -110,7 +110,7 @@ class SecondsLateFilter(admin.SimpleListFilter):
         if value == 'late':
             return queryset.filter(seconds_late__gt = 0)
         elif value == 'less_than_five_min':
-            return queryset.filter(seconds_late__gt = 0, seconds_late__lte=300)
+            return queryset.filter(seconds_late__gt = 1, seconds_late__lte=300)
         elif value == 'more_than_five_min':
             return queryset.filter(seconds_late__gt=300)
         elif value == 'more_than_five_days':
@@ -207,7 +207,7 @@ class SubmissionAdmin(admin.ModelAdmin):
         "student__sortable_name", "assignment__assignment_name",
     )
 
-    actions = ["sync_submissions", export_as_csv_action(),]
+    actions = ["sync_submissions", "apply_zero_scores", export_as_csv_action(),]
 
     change_list_template = "core/submissions_changelist.html"
 
@@ -316,6 +316,16 @@ class SubmissionAdmin(admin.ModelAdmin):
         
             update_submissions.delay(request.user.username, submission_ids)
             messages.info(request, "Syncing submissions. This action is not instantaneous. Check back later.")
+    
+    @admin.action(description="Apply zero scores to selected")
+    def apply_zero_scores(modeladmin, request, queryset):
+        if request.user.is_staff:
+            user_profile = UserProfile.objects.get(user=request.user)
+
+            submission_ids = [x.id for x in queryset if x.seconds_late>=3600*24*5]
+
+            task_apply_zero_scores(request.user.username, submission_ids)
+            messages.info(request, "Apply zero scores. This action is not instantaneous. Check back later.")
 
     
 class GradedFilter(admin.SimpleListFilter):
