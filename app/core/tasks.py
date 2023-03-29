@@ -799,7 +799,7 @@ def task_apply_zero_score(username, submission_pk):
         if canvas_submission.entered_score !=0 and canvas_submission.seconds_late >= 3600*24*5:
             print("Applying zero score")
 
-            text_comment= 'This submission has been awarded a score of 0 because it is more than 5 days late. If you believe this is incorrect please \n contact SLS-Assessment@liverpool.ac.uk. The original score for this submission was {}'.format(submission.entered_score) 
+            text_comment= 'This submission has been awarded a score of 0 because it is more than 5 days late. If you believe this is incorrect please \n contact SLS-Assessment@liverpool.ac.uk. The original score for this submission was {}'.format(canvas_submission.entered_score) 
             canvas_submission.edit(submission={'posted_grade':0},comment={'text_comment':text_comment})
     except:
         print("Couldn't apply zero scores")
