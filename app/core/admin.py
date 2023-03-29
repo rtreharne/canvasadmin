@@ -322,9 +322,9 @@ class SubmissionAdmin(admin.ModelAdmin):
         if request.user.is_staff:
             user_profile = UserProfile.objects.get(user=request.user)
 
-            submission_ids = [x.id for x in queryset if x.seconds_late>=3600*24*5]
+            submission_ids = [x.id for x in queryset]
 
-            task_apply_zero_scores(request.user.username, submission_ids)
+            task_apply_zero_scores.delay(request.user.username, submission_ids)
             messages.info(request, "Apply zero scores. This action is not instantaneous. Check back later.")
 
     
