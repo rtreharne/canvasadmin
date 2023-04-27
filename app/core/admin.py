@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from accounts.models import User, UserProfile
 from canvasapi import Canvas
 from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
-from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines
+from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines, task_apply_cat_bs, task_apply_cat_cs
 from django.contrib.admin import DateFieldListFilter
 from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores
 from logs.models import AssignmentLog, Department
@@ -15,6 +15,7 @@ from .forms import CsvImportForm, AssignmentDatesUpdateForm
 from django.urls import path
 import csv
 from django.shortcuts import render, redirect
+from admin_confirm.admin import AdminConfirmMixin, confirm_action
 
 class StaffAdmin(admin.ModelAdmin):
     list_display = ("name", "items_graded", "courses_graded_in",)
@@ -98,7 +99,6 @@ class SecondsLateFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         return (
-            ('late', 'Late'),
             ('less_than_five_min', 'Less than 5 mins late'),
             ('more_than_five_min', 'More than 5 mins late'),
             ('more_than_five_days', 'More than 5 days late')
@@ -107,10 +107,8 @@ class SecondsLateFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         value = self.value()
 
-        if value == 'late':
-            return queryset.filter(seconds_late__gt = 0)
-        elif value == 'less_than_five_min':
-            return queryset.filter(seconds_late__gt = 1, seconds_late__lte=300)
+        if value == 'less_than_five_min':
+            return queryset.filter(seconds_late__gte = 1, seconds_late__lte=300)
         elif value == 'more_than_five_min':
             return queryset.filter(seconds_late__gt=300)
         elif value == 'more_than_five_days':
@@ -178,7 +176,7 @@ class IntegrityConcernFilter(admin.SimpleListFilter):
         return queryset
 
 
-class SubmissionAdmin(admin.ModelAdmin):
+class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
     list_per_page=500
 
     list_display = (
@@ -207,7 +205,7 @@ class SubmissionAdmin(admin.ModelAdmin):
         "student__sortable_name", "assignment__assignment_name",
     )
 
-    actions = ["sync_submissions", "apply_zero_scores", export_as_csv_action(),]
+    actions = ["sync_submissions", "apply_zero_scores", "apply_cat_b", "apply_cat_c", export_as_csv_action(),]
 
     change_list_template = "core/submissions_changelist.html"
 
@@ -308,6 +306,7 @@ class SubmissionAdmin(admin.ModelAdmin):
     student_link.admin_order_field = "student"
 
     @admin.action(description="Sync selected submissions")
+    @confirm_action
     def sync_submissions(modeladmin, request, queryset):
         if request.user.is_staff:
             user_profile = UserProfile.objects.get(user=request.user)
@@ -318,6 +317,7 @@ class SubmissionAdmin(admin.ModelAdmin):
             messages.info(request, "Syncing submissions. This action is not instantaneous. Check back later.")
     
     @admin.action(description="Apply zero scores to selected")
+    @confirm_action
     def apply_zero_scores(modeladmin, request, queryset):
         if request.user.is_staff:
             user_profile = UserProfile.objects.get(user=request.user)
@@ -326,6 +326,26 @@ class SubmissionAdmin(admin.ModelAdmin):
 
             task_apply_zero_scores.delay(request.user.username, submission_ids)
             messages.info(request, "Apply zero scores. This action is not instantaneous. Check back later.")
+
+    @admin.action(description="Apply Category B Cap")
+    @confirm_action
+    def apply_cat_b(modeladmin, request, queryset):
+        if request.user.is_staff:
+            user_profile = UserProfile.objects.get(user=request.user)
+            submission_ids = [x.id for x in queryset]
+            task_apply_cat_bs.delay(request.user.username, submission_ids)
+            messages.info(request, "Apply Cat B Cap. This action in not instantaneous. Check back later.")
+        
+    @admin.action(description="Apply Category C Cap")
+    @confirm_action
+    def apply_cat_c(modeladmin, request, queryset):
+        if request.user.is_staff:
+            user_profile = UserProfile.objects.get(user=request.user)
+            submission_ids = [x.id for x in queryset]
+            task_apply_cat_cs.delay(request.user.username, submission_ids)
+            messages.info(request, "Apply Cat C Cap. This action in not instantaneous. Check back later.")
+
+
 
     
 class GradedFilter(admin.SimpleListFilter):
@@ -356,7 +376,7 @@ class GradedFilter(admin.SimpleListFilter):
         #return queryset
 
 
-class AssignmentAdmin(admin.ModelAdmin):
+class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
     list_display = (
         "assignment_link",
         "link",
@@ -437,7 +457,6 @@ class AssignmentAdmin(admin.ModelAdmin):
 
         
     def graded_pc(self, obj):
-        print(obj.__dict__)
         submissions = Submission.objects.filter(assignment = obj)
         if len(submissions) > 0:
             graded_string = ""
@@ -454,6 +473,7 @@ class AssignmentAdmin(admin.ModelAdmin):
     
     
     @admin.action(description="Anonymize selected assignments")
+    @confirm_action
     def admin_anonymise(modeladmin, request, queryset):
         if request.user.is_staff:
             user_profile = UserProfile.objects.get(user=request.user)
@@ -480,6 +500,7 @@ class AssignmentAdmin(admin.ModelAdmin):
    
     
     @admin.action(description="De-anonymise selected assignments")
+    @confirm_action
     def admin_deanonymise(modeladmin, request, queryset):
         if request.user.is_staff:
             user_profile = UserProfile.objects.get(user=request.user)
@@ -515,6 +536,7 @@ class AssignmentAdmin(admin.ModelAdmin):
             messages.info(request, "Getting Submissions. This action is not instantaneous. Please check back later.")
 
     @admin.action(description="Add five minutes to selected deadlines")
+    @confirm_action
     def task_add_five_minutes_to_deadlines(modeladmin, request, queryset):
         if request.user.is_staff:
             assignment_ids = [x.assignment_id for x in queryset]

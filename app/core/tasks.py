@@ -293,8 +293,6 @@ def update_assignments(username, assignment_ids):
 
     for a in assignments:
         # get canvas assignment
-
-        print(a.course.course_id, a.assignment_id)
         
         try:
             canvas_assignment = canvas.get_course(a.course.course_id).get_assignment(a.assignment_id)
@@ -305,8 +303,22 @@ def update_assignments(username, assignment_ids):
         if assignment_found:
             for key, value in app_canvas_mapp.items(): 
                     
+                if key == "due_at":
+                    print("updating due_at")
+                    if canvas_assignment.has_overrides:
+                        print("has overrides")
+                        assignment = [x for x in canvas.get_course(a.course.course_id).get_assignments(include=["all_dates"]) if x.id == a.assignment_id][0]
+                        dates = assignment.all_dates
+                        for date in dates:
+                            print(date.keys())
+                            if "base" in date.keys():
+                                datetime = is_datetime(date["due_at"])
+                else:
 
-                datetime = is_datetime(canvas_assignment.__dict__.get(key, None))
+                    datetime = is_datetime(canvas_assignment.__dict__.get(key, None))
+
+                
+
 
                 if datetime:
                     if datetime != a.__dict__[key].replace(tzinfo=None):
@@ -801,8 +813,81 @@ def task_apply_zero_score(username, submission_pk):
 
             text_comment= 'This submission has been awarded a score of 0 because it is more than 5 days late. If you believe this is incorrect please \n contact SLS-Assessment@liverpool.ac.uk. The original score for this submission was {}'.format(canvas_submission.entered_score) 
             canvas_submission.edit(submission={'posted_grade':0},comment={'text_comment':text_comment})
+            update_submissions(username, [submission_pk])
+
     except:
         print("Couldn't apply zero scores")
+
+@shared_task
+def task_apply_cat_bs(username, submission_pks):
+    for submission_pk in submission_pks:
+        task_apply_cat_b(username, submission_pk)
+    return "Done"
+
+def task_apply_cat_b(username, submission_pk):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    submission = Submission.objects.get(pk=submission_pk)
+
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    try:
+        course = canvas.get_course(submission.course.course_id)
+        assignment = course.get_assignment(submission.assignment.assignment_id)
+        print("course_code", course.course_code)
+
+        if course.course_code[4] == "7":
+            cap = 50
+            print("capping at 50")
+        else:
+            cap = 40
+
+        canvas_submission = assignment.get_submission(user=int(submission.student.canvas_id))
+        
+        if canvas_submission.entered_score !=0:
+            print("Applying Cat B Cap")
+
+            text_comment= 'The Academic Integrity Committee has found that a Category B error has been made. In line with the Code of Practice on Assessment your mark has been capped at {0}%. The original score for this submission was {1}. If you have any queries please contact sls-integrity@liverpool.ac.uk'.format(str(cap), canvas_submission.entered_score) 
+            canvas_submission.edit(submission={'posted_grade':cap},comment={'text_comment':text_comment})
+            update_submissions(username, [submission_pk])
+    except:
+        print("Couldn't apply cat_b")
+
+@shared_task
+def task_apply_cat_cs(username, submission_pks):
+    for submission_pk in submission_pks:
+        task_apply_cat_c(username, submission_pk)
+    return "Done"
+
+def task_apply_cat_b(username, submission_pk):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    submission = Submission.objects.get(pk=submission_pk)
+
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    try:
+        course = canvas.get_course(submission.course.course_id)
+        assignment = course.get_assignment(submission.assignment.assignment_id)
+        print("course_code", course.course_code)
+
+        cap = 0
+
+        canvas_submission = assignment.get_submission(user=int(submission.student.canvas_id))
+        
+        if canvas_submission.entered_score !=0:
+            print("Applying Cat C Cap")
+
+            text_comment= 'The Academic Integrity Committee has found that a Category C error has been made. In line with the Code of Practice on Assessment your mark has been capped at {0}%. The original score for this submission was {1}. If you have any queries please contact sls-integrity@liverpool.ac.uk'.format(str(cap), canvas_submission.entered_score) 
+            canvas_submission.edit(submission={'posted_grade':cap},comment={'text_comment':text_comment})
+            update_submissions(username, [submission_pk])
+    except:
+        print("Couldn't apply cat_c")
+
 
     
 

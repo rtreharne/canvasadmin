@@ -41,13 +41,14 @@ ALLOWED_HOSTS.extend(
 
 INSTALLED_APPS = [
     'jazzmin',
+    'django_celery_beat',
+    'admin_confirm',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_celery_beat',
     'core',
     'accounts',
     'logs',
@@ -88,16 +89,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'app.wsgi.application'
 
 JAZZMIN_SETTINGS = {
-    "site_title": "Assessment Admin",
-    "site_header": "Assessment Admin",
-    "welcome_sign": "Welcome to Assessment Admin. Please Login.",
-    "copyright": "R. E. Treharne and J. Foster",
-    "site_brand": "Assessment Admin",
+    "site_title": " Canvas Lens",
+    "site_header": "Canvas Lens",
+    "welcome_sign": "Welcome to Canvas Lens. Please Login.",
+    "copyright": "R. E. Treharne, J. Foster A. Adley-Sweeney",
+    "site_brand": "Canvas Lens",
      # Logo to use for your site, must be present in static files, used for brand on top left
-    "site_logo": "logo.png",
+    "site_logo": "logo-lens.png",
 
     # Logo to use for your site, must be present in static files, used for login form logo (defaults to site_logo)
-    "login_logo": "logo.png",
+    "login_logo": "logo-lens.png",
 
     # Logo to use for login form in dark themes (defaults to login_logo)
     "login_logo_dark": None,
