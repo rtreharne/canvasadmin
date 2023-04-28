@@ -1,6 +1,6 @@
 # Canvas Admin
 
-This is an open-source tool built by Dr. Robert Treharne and Jack Foster at the University of Liverpool to help teachers/administrators manage Canvas assignments and submissions.
+This is an open-source tool built by Dr. Robert Treharne, Jack Foster and Alex Adley-Sweeney at the University of Liverpool to help teachers/administrators manage Canvas assignments and submissions.
 
 Guidance on how to build for both local development and production (Amazon AWS EC2) below.
 
