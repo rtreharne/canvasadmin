@@ -1,4 +1,4 @@
-# Canvas Admin
+# Canvas Lens
 
 This is an open-source tool built by Dr. Robert Treharne, Jack Foster and Alex Adley-Sweeney at the University of Liverpool to help teachers/administrators manage Canvas assignments and submissions.
 
