@@ -4,6 +4,15 @@ This is an open-source tool built by Dr. Robert Treharne, Jack Foster and Alex A
 
 Guidance on how to build for both local development and production (Amazon AWS EC2) below.
 
+## Overview:
+
+Here is brief video describing why this system is necessary and how it's being used:
+
+https://liverpool.instructuremedia.com/embed/6f235b45-ea6e-49d7-b1a9-dc3659241ee9
+
+Additional links:
+  + [Canvas Admin for Wizards](https://rtreharne.github.io/canvas-wizards/intro.html)
+
 ## Deploying Locally
 
 ### Step 1. Clone repo
@@ -47,6 +56,14 @@ docker-compose run --user root --rm app sh -c "python manage.py createsuperuser"
 Run `docker-compose up app` again to re-start local server.
 
 ### Step 5 - Configure application
+
+Watch this video on how to configure application for first use:
+
+https://liverpool.instructuremedia.com/embed/f4c28100-c6ab-4e3a-8bc6-38d0229e2015
+
+Here is the Canvas Community Guide on how to manage/create API tokens:
+
+https://community.canvaslms.com/t5/Admin-Guide/How-do-I-manage-API-access-tokens-as-an-admin/ta-p/89
 
 
 ## Deploying to AWS EC2 
