@@ -4,7 +4,7 @@ This is an open-source tool built by Dr. Robert Treharne and Jack Foster at the 
 
 Guidance on how to build for both local development and production (Amazon AWS EC2) below.
 
-## Guidance
+## Deploying Locally
 
 ### Step 1. Clone repo
 
@@ -46,8 +46,12 @@ docker-compose run --user root --rm app sh -c "python manage.py createsuperuser"
 ```
 Run `docker-compose up app` again to re-start local server.
 
+### Step 5 - Configure application
 
-### Step 7 - Deploy to AWS EC2
+
+## Deploying to AWS EC2 
+
+### Step 1. Clone Repo
 
 Clone this repo and push to new GitHub repository.
 
