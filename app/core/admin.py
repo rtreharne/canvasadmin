@@ -92,6 +92,8 @@ class StudentAdmin(admin.ModelAdmin):
         "sortable_name",
     )
 
+    actions = [export_as_csv_action(),]
+
 
 class SecondsLateFilter(admin.SimpleListFilter):
     title = 'Late Filter'
