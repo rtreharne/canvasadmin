@@ -321,7 +321,9 @@ def update_assignments(username, assignment_ids):
 
 
                 if datetime:
-                    if datetime != a.__dict__[key].replace(tzinfo=None):
+                    if a.__dict__[key] == None:
+                        pass
+                    elif datetime != a.__dict__[key].replace(tzinfo=None):
                         
                         print(key, "updated")
                         
