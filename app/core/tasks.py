@@ -319,31 +319,38 @@ def update_assignments(username, assignment_ids):
 
                 
 
-
+                    
                 if datetime:
-                    if a.__dict__[key] == None:
+                    if a.__dict__[key] is None:
                         pass
-                    elif datetime != a.__dict__[key].replace(tzinfo=None):
-                        
-                        print(key, "updated")
-                        
-                        AssignmentLog(
-                            assignment=a.assignment_name,
-                            course=a.course,
-                            request="UPDATE",
-                            field=key,
-                            from_value=str(a.__dict__[key]),
-                            to_value=str(datetime),
-                            department=user.department
-                        ).save()
-
-                        print(key, value, datetime, a.__dict__[key].replace(tzinfo=None))
-                        setattr(a, key, datetime)
-                        try:    
-                            a.pc_ungraded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
+                    else:
+                        try:
+                            dt_flag=True
+                            datetime != a.__dict__[key].replace(tzinfo=None)
                         except:
-                            a.pc_ungraded = 0
-                        a.save()
+                            dt_flag=False
+
+                        if dt_flag:
+                        
+                            print(key, "updated")
+                            
+                            AssignmentLog(
+                                assignment=a.assignment_name,
+                                course=a.course,
+                                request="UPDATE",
+                                field=key,
+                                from_value=str(a.__dict__[key]),
+                                to_value=str(datetime),
+                                department=user.department
+                            ).save()
+
+                            print(key, value, datetime, a.__dict__[key].replace(tzinfo=None))
+                            setattr(a, key, datetime)
+                            try:    
+                                a.pc_ungraded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
+                            except:
+                                a.pc_ungraded = 0
+                            a.save()
                 else:
                     if canvas_assignment.__dict__[value] != a.__dict__[key]:
                         if key == "needs_grading_count":
