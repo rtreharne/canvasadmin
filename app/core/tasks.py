@@ -7,6 +7,9 @@ from .models import Course, Assignment, Student, Submission, Staff
 from accounts.models import UserProfile
 from datetime import datetime, timedelta
 from accounts.models import Department
+from celery.utils.log import get_task_logger
+
+logger = get_task_logger(__name__)
 
 def json_to_datetime(dt):
     try:
@@ -268,6 +271,7 @@ def update_assignments(username, assignment_ids):
 
     assignments = Assignment.objects.filter(assignment_id__in=assignment_ids)
 
+
     # Look for submissions
     for assignment in assignments:
         try:
@@ -321,7 +325,7 @@ def update_assignments(username, assignment_ids):
 
                     
                 if datetime:
-                    if a.__dict__[key] is None:
+                    if len(str(a.__dict__[key])) <1:
                         pass
                     else:
                         try:
