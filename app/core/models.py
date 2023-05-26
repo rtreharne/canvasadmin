@@ -30,7 +30,7 @@ class Assignment(models.Model):
     ungraded = models.IntegerField(null=True, blank=True, default=0)
     pc_graded = models.FloatField(null=True, blank=True, verbose_name="Graded (%)", default=0)
     not_submitted = models.IntegerField(null=True, blank=True,default=0)
-    sas_exam = models.BooleanField(default=False, verbose_name="SAS Exam")
+    quiz = models.BooleanField(default=False, verbose_name="Quiz")
     average_score = models.FloatField(null=True, blank=True, verbose_name="Average Score (%)")
     type = models.CharField(max_length=128, null=True, blank=True)
     has_overrides = models.BooleanField(default=False, verbose_name="Overrides")

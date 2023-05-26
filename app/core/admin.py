@@ -36,7 +36,7 @@ class CourseAdmin(admin.ModelAdmin):
         "course_code",
     )
 
-    actions = ["admin_get_assignments_by_course",]
+    actions = ["admin_get_assignments_by_course", export_as_csv_action(),]
 
     change_list_template = "core/courses_changelist.html"
 
@@ -204,7 +204,7 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
                  )
 
     search_fields = (
-        "student__sortable_name", "assignment__assignment_name",
+        "student__sortable_name", "assignment__assignment_name", "assignment__course__course_code"
     )
 
     actions = ["sync_submissions", "apply_zero_scores", "apply_cat_b", "apply_cat_c", export_as_csv_action(),]
@@ -359,7 +359,8 @@ class GradedFilter(admin.SimpleListFilter):
             ('outstanding', 'Outstanding'),
             ('completed', 'Completed'),
             ('no_submissions', 'No Submissions'),
-            ('has_submissions', 'Has Submissions')
+            ('has_submissions', 'Has Submissions'),
+            ('not_graded', 'Not Graded')
         )
 
     def queryset(self, request, queryset):
@@ -375,12 +376,15 @@ class GradedFilter(admin.SimpleListFilter):
             return queryset.filter(pc_graded=None)
         elif value == 'has_submissions':
             return queryset.filter(pc_graded__gte=0).exclude(pc_graded=None)
+        elif value == 'not_graded':
+            return queryset.filter(pc_graded=0).exclude(pc_graded=None)
         #return queryset
 
 
 class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
     list_display = (
         "assignment_link",
+        #"assignment_name",
         "link",
         "due_at",
         "has_overrides",
@@ -388,17 +392,17 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
         "average_score",
         "anonymous_grading",
         "published",
-        #"active",
-        #"sas_exam"
+        "active",
+        "quiz",
     )
 
     #list_filter = ('')
 
     #readonly_fields = ('assignment_name','course', 'assignment_id', 'url', 'unlock_at', 'due_at', 'lock_at', 'needs_grading_count', 'published', 'anonymous_grading')
 
-    actions = ["admin_anonymise", "admin_deanonymise", export_as_csv_action(), "sync_assignments", "get_submissions", "task_add_five_minutes_to_deadlines", "update_assignment_deadlines"]
+    actions = ["admin_anonymise", "admin_deanonymise", export_as_csv_action(), "sync_assignments", "get_submissions", "task_add_five_minutes_to_deadlines", "update_assignment_deadlines", "make_inactive"]
 
-    #list_editable = ('active', 'sas_exam')
+    list_editable = ('active', 'quiz')
 
     search_fields = ('assignment_name', 'course__course_code')
 
@@ -406,8 +410,8 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
                    'course__course_code',
                    'assignment_name',
                    GradedFilter,
-                   #'active',
-                   #'sas_exam',
+                   'active',
+                   'quiz',
                    'published',
                    AssignmentDateFilter,
                    'has_overrides',
@@ -419,6 +423,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
             path('update-assignment-deadline/', self.update_assignment_deadlines),
         ]
         return my_urls + urls
+    
     
     def update_assignment_deadlines(self, request, queryset):
         if 'apply' in request.POST:
@@ -446,7 +451,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
         return queryset
 
     def assignment_link(self, obj):
-        return format_html('<a href="{}" target="_blank">{}</a>'.format(obj.url, obj.assignment_name))
+        return format_html('<a href="{}" target="_blank">{} ...</a> <a href="{}/change">[edit]</a>'.format(obj.url, obj.assignment_name[:25], obj.id))
 
 
     def link(self, obj):
@@ -455,7 +460,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
     assignment_link.short_description = "Assignment Name"
     assignment_link.admin_order_field = "assignment_name"
     link.short_description = "Course"
-    link.admin_order_field = 'ascending'
+    link.admin_order_field = 'course__course_code'
 
         
     def graded_pc(self, obj):
@@ -472,7 +477,14 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
     graded_pc.admin_order_field = 'pc_graded'
 
     
-    
+    @admin.action(description="Make selected inactive")
+    def make_inactive(modeladmin, request, queryset):
+        if request.user.is_staff:
+            user_profile = UserProfile.objects.get(user=request.user)
+
+            for a in queryset:
+                a.active = False
+                a.save()
     
     @admin.action(description="Anonymize selected assignments")
     @confirm_action

@@ -31,7 +31,12 @@ class AssignmentDateFilter(admin.SimpleListFilter):
         if value != None:
             date_obj = Date.objects.get(label=value)
 
-            return queryset.filter(due_at__gte=date_obj.start, due_at__lte=date_obj.finish)
+            if date_obj.start and date_obj.finish:
+
+                return queryset.filter(due_at__gte=date_obj.start, due_at__lte=date_obj.finish)
+            
+            else:
+                return queryset.filter(due_at__isnull=True)
 
         return queryset
     
