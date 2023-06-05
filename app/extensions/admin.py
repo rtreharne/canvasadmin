@@ -15,6 +15,7 @@ class ExtensionAdmin(admin.ModelAdmin):
         "unique_id",
         "student",
         "extension_type",
+        "course",
         "assignment_link",
         "original_deadline",
         "extension_deadline",
@@ -26,6 +27,7 @@ class ExtensionAdmin(admin.ModelAdmin):
         "student",
         "assignment",
         "approved",
+        "course",
         
     )
 
@@ -45,6 +47,14 @@ class ExtensionAdmin(admin.ModelAdmin):
     
     assignment_link.short_description = "Assignment Name"
     assignment_link.admin_order_field = "assignment__assignment_name"
+
+    def course(self, obj):
+        return obj.assignment.course
+        return format_html('<a href="{}/courses/{}/grades" target="_blank">{}</a>'.format(obj.department.CANVAS_API_URL, obj.course.course_id, obj.course))
+    
+    course.short_description = "Course"
+    course.admin_order_field = "assignment_course"
+    
 
 
     def get_urls(self):
