@@ -5,7 +5,7 @@ class Sample(models.Model):
     attachment = models.FileField()
 
 class Course(models.Model):
-    course_code = models.CharField(max_length=128, unique=True, verbose_name="Course")
+    course_code = models.CharField(max_length=128, unique=True)
     course_id = models.IntegerField(null=True, blank=True)
     course_name = models.CharField(max_length=128)
     course_department = models.ForeignKey(Department, null=True, blank=True, on_delete=models.PROTECT)
