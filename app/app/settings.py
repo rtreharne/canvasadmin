@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     'logs',
     'crispy_forms',
     'modules',
-    'extensions'
+    'extensions',
+    'enrollments',
     
 ]
 

@@ -15,7 +15,7 @@ class Course(models.Model):
     
 class Assignment(models.Model):
     department = models.ForeignKey(Department, null=True, blank=True, on_delete=models.PROTECT)
-    assignment_name = models.CharField(max_length=128, verbose_name="Assignment")
+    assignment_name = models.CharField(max_length=500, verbose_name="Assignment")
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     assignment_id = models.IntegerField(unique=True)
     unlock_at = models.DateTimeField(null=True, blank=True)

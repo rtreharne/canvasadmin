@@ -4,6 +4,7 @@ import requests
 from celery import shared_task
 from canvasapi import Canvas
 from .models import Course, Assignment, Student, Submission, Staff
+from enrollments.models import Enrollment
 from accounts.models import UserProfile
 from datetime import datetime, timedelta
 from accounts.models import Department
@@ -284,10 +285,10 @@ def update_assignments(username, assignment_ids):
             continue
 
     app_canvas_mapp = {
-        "assignment_name": "name",
+        #"assignment_name": "name",
         "unlock_at": "unlock_at",
         "lock_at": "lock_at",
-        "due_at": "due_at",
+        #"due_at": "due_at",
         "needs_grading_count": "needs_grading_count",
         "published": "published",
         "anonymous_grading": "anonymous_grading",
@@ -392,7 +393,7 @@ def update_assignments(username, assignment_ids):
                         
                         print(key, "updated")
                         AssignmentLog(
-                            assignment=canvas_assignment.__dict__["name"],
+                            assignment=canvas_assignment.__dict__["name"][:120],
                             course=a.course,
                             request="UPDATE",
                             field=key,
@@ -614,8 +615,11 @@ def update_submissions(username, submission_ids):
         # Does student have sis_user_id?
         
 
-
-        canvas_submission = canvas.get_course(sub.assignment.course.course_id).get_assignment(sub.assignment.assignment_id).get_submission(sub.student.canvas_id, include=["user", "submission_comments", "full_rubric_assignment"])
+        try:
+            canvas_submission = canvas.get_course(sub.assignment.course.course_id).get_assignment(sub.assignment.assignment_id).get_submission(sub.student.canvas_id, include=["user", "submission_comments", "full_rubric_assignment"])
+        except:
+            print("couldn't get canvas submission")
+            continue
         
 
         if sub.student.sis_user_id == None:
@@ -899,8 +903,117 @@ def task_apply_cat_b(username, submission_pk):
     except:
         print("Couldn't apply cat_c")
 
+@shared_task
+def task_award_five_min_extensions(username, submission_pks):
+    for submission_pk in submission_pks:
+        task_award_five_min_extension(username, submission_pk)
+    return "Done"
 
-    
+def task_award_five_min_extension(username, submission_pk):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    submission = Submission.objects.get(pk=submission_pk)
+
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    try:
+        course = canvas.get_course(submission.course.course_id)
+        assignment = course.get_assignment(submission.assignment.assignment_id)
+        user = canvas.get_user(submission.student.canvas_id)
+
+        # Check for existing overrides/extensions
+        overrides = [x for x in assignment.get_overrides() if user in x.__dict__.get("student_ids", [])]
+
+        if len(overrides) > 0:
+            print("override exists")
+        else:
+            print("no override exists")
+
+
+            #assignment.create_override(assignment_override={"student_ids": [user.id], "due_at": submission.assignment.due_at + timedelta(minutes=5)})
+            #print("override created")
+
+
+    except:
+        print("Couldn't award five minute extensions")
+
+@shared_task
+def task_get_enrollments_by_courses(username, course_ids):
+    for course_id in course_ids:
+        task_get_enrollments_by_course(username, course_id)
+
+@shared_task
+def task_get_enrollments_by_course(username, course_id):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    course = canvas.get_course(course_id)
+
+    # Get engagement data
+    engagement_data = [x for x in course.get_course_level_student_summary_data()]
+
+    print(engagement_data)
+
+    enrollments = [x for x in course.get_enrollments(include=["user"]) if x.type=="StudentEnrollment"]
+
+    for enrollment in enrollments:
+
+        # Check enrollment exists
+        try:
+            enrollments = Enrollment.objects.filter(canvas_id=enrollment.id, course__course_id=course_id)
+            for e in enrollments:
+                e.delete()
+        except:
+            print("no enrollment")
+
+
+        # Get engagement record
+        try:
+            for item in engagement_data:
+                if item.id == enrollment.user_id:
+                    page_views = item.page_views
+                    participations = item.participations
+        except:
+            page_views = None
+            participations = None
+            print("engagement not updated")
+
+        # Get average assignment score
+        submissions = Submission.objects.filter(student__canvas_id=enrollment.user_id, 
+                                                course__course_id=course_id)
+        print("user_id:", enrollment.user_id)
+        try:
+            for submission in submissions:
+                print("submission:", submission)
+
+            scores = [x.score for x in submissions if x.score != None]
+            average_score = sum(scores)/len(scores)
+        except:
+            print("no submissions")
+            average_score = None
+
+        # Create enrollment
+        #try:
+        enrollment = Enrollment(
+            name=enrollment.user["sortable_name"],
+            canvas_course_id=course_id,
+            canvas_id=enrollment.id,
+            canvas_user_id = enrollment.user_id,
+            login_id=enrollment.user["login_id"],
+            sis_user_id=enrollment.user["sis_user_id"],
+            course = Course.objects.get(course_id=course_id),
+            page_views = page_views,
+            participations = participations,
+            average_assignment_score = average_score
+        ).save()
+        #except:
+            #print("Couldn't add enrollment")
+            #continue
 
 
 

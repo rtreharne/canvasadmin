@@ -22,6 +22,8 @@ class Extension(models.Model):
     extension_deadline = models.DateTimeField(null=True, blank=True)
     original_deadline = models.DateTimeField(null=True, blank=True, editable=False)
     apply_to_subcomponents = models.BooleanField(default=False)
+    reason = models.TextField(null=True, blank=True)
+    files = models.FileField(upload_to='extensions/', null=True, blank=True)
 
     def __str__(self):
         return str(self.student_id)

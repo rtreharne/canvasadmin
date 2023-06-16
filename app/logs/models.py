@@ -3,7 +3,7 @@ from core.models import Assignment
 from accounts.models import Department
 
 class AssignmentLog(models.Model):
-    assignment = models.CharField(max_length=128, verbose_name="Assignment")
+    assignment = models.CharField(max_length=500, verbose_name="Assignment")
     course = models.CharField(max_length=128, verbose_name="Course")
     request = models.CharField(max_length=128, choices=(
         ("UPDATE", "Update"),
@@ -23,7 +23,7 @@ class AssignmentLog(models.Model):
 
 class SubmissionLog(models.Model):
     student = models.CharField(max_length=128, verbose_name="Student")
-    submission = models.CharField(max_length=128, verbose_name="Assignment")
+    submission = models.CharField(max_length=500, verbose_name="Assignment")
     course = models.CharField(max_length=128, verbose_name="Course")
     request = models.CharField(max_length=128, choices=(
         ("UPDATE", "Update"),

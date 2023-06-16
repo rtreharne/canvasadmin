@@ -1,0 +1,15 @@
+{% extends "extensions/extensions_base.html" %}
+
+{% block content %}
+
+    <p>Select the course you want to apply for an extension/ELP for.</p>
+
+    <form action="" method="post">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit" value="Next" />
+    </form>
+
+{% endblock content %}
+
+    

@@ -64,6 +64,18 @@ def task_apply_override(username, extension):
 
     try:
 
+        # Determine if any extensions already exist for this student and assignment and delete them.
+
+        existing_overrides = [x for x in canvas.get_course(extension.assignment.course.course_id).get_assignment(extension.assignment.assignment_id).get_overrides() 
+                              if extension.student.canvas_id in x.__dict__.get("student_ids", [])]
+
+        for override in existing_overrides:
+            print("deleting override")
+            override.delete()
+
+        for override in existing_overrides:
+            print(override.__dict__.get("student_ids", None))
+
         assignment = canvas.get_course(extension.assignment.course.course_id).get_assignment(extension.assignment.assignment_id)
 
         
@@ -81,7 +93,7 @@ def task_apply_override(username, extension):
         extension.save()
 
     except:
-        print("override not created")
+        print("override not created!")
 
 def datetime_to_json(dt):
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")

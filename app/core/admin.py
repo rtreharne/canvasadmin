@@ -3,9 +3,9 @@ from django.utils.html import format_html
 from accounts.models import User, UserProfile
 from canvasapi import Canvas
 from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
-from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines, task_apply_cat_bs, task_apply_cat_cs
+from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines, task_apply_cat_bs, task_apply_cat_cs, task_get_enrollments_by_courses
 from django.contrib.admin import DateFieldListFilter
-from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores
+from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
@@ -36,7 +36,9 @@ class CourseAdmin(admin.ModelAdmin):
         "course_code",
     )
 
-    actions = ["admin_get_assignments_by_course", export_as_csv_action(),]
+    actions = ["admin_get_assignments_by_course",
+               "admin_get_enrollments_by_course",
+                export_as_csv_action(),]
 
     change_list_template = "core/courses_changelist.html"
 
@@ -79,6 +81,14 @@ class CourseAdmin(admin.ModelAdmin):
             course_ids = [x.course_id for x in queryset]
             get_assignments_by_courses.delay(request.user.username, course_ids)
             messages.info(request, "Getting Assignments! This action is not instantaneous. Please check back later.")
+
+    @admin.action(description="Get enrollments for selected")
+    def admin_get_enrollments_by_course(modeladmin, request, queryset):
+        if request.user.is_staff:
+            course_ids = [x.course_id for x in queryset]
+            task_get_enrollments_by_courses.delay(request.user.username, course_ids)
+            messages.info(request, "Getting Enrollments! This action is not instantaneous. Please check back later.")
+
 
 class StudentAdmin(admin.ModelAdmin):
     list_display = (
@@ -207,7 +217,8 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
         "student__sortable_name", "assignment__assignment_name", "assignment__course__course_code"
     )
 
-    actions = ["sync_submissions", "apply_zero_scores", "apply_cat_b", "apply_cat_c", export_as_csv_action(),]
+    actions = ["sync_submissions", "apply_zero_scores", "apply_cat_b", "apply_cat_c", 
+               export_as_csv_action(), "award_five_min_extensions"]
 
     change_list_template = "core/submissions_changelist.html"
 
@@ -314,8 +325,14 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
             user_profile = UserProfile.objects.get(user=request.user)
             
             submission_ids = [x.submission_id for x in queryset]
-        
-            update_submissions.delay(request.user.username, submission_ids)
+
+            # break submission_ids into batches of max 100
+            submission_ids_batch = [submission_ids[i:i + 100] for i in range(0, len(submission_ids), 100)]
+
+
+
+            for submission_ids in submission_ids_batch:
+                update_submissions.delay(request.user.username, submission_ids)
             messages.info(request, "Syncing submissions. This action is not instantaneous. Check back later.")
     
     @admin.action(description="Apply zero scores to selected")
@@ -347,9 +364,16 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
             task_apply_cat_cs.delay(request.user.username, submission_ids)
             messages.info(request, "Apply Cat C Cap. This action in not instantaneous. Check back later.")
 
+    @admin.action(description="Award 5 min extensions")
+    @confirm_action
+    def award_five_min_extensions(modeladmin, request, queryset):
+        if request.user.is_staff:
+            user_profile = UserProfile.objects.get(user=request.user)
+            submission_ids = [x.id for x in queryset]
+            task_award_five_min_extensions.delay(request.user.username, submission_ids)
+            messages.info(request, "Awarding 5 min extensions. This action in not instantaneous. Check back later.")
 
 
-    
 class GradedFilter(admin.SimpleListFilter):
     title = 'Grading Status'
     parameter_name = 'pc_graded'
@@ -469,7 +493,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
             graded_string = ""
             if obj.pc_graded != None:
                 graded_string = obj.pc_graded
-            url = "/core/submission/?assignment_id={}".format(obj.id)
+            url = "/admin/core/submission/?assignment_id={}".format(obj.id)
             return format_html("<a href='{}'>{}</a>".format(url, graded_string))
         return obj.pc_graded
     
@@ -546,7 +570,8 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
     def get_submissions(modeladmin, request, queryset):
         if request.user.is_staff:
             assignment_ids = [x.assignment_id for x in queryset]
-            task_get_submissions.delay(request.user.username, assignment_ids)
+            for assignment_id in assignment_ids:
+                task_get_submissions.delay(request.user.username, [assignment_id])
             messages.info(request, "Getting Submissions. This action is not instantaneous. Please check back later.")
 
     @admin.action(description="Add five minutes to selected deadlines")
@@ -556,6 +581,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
             assignment_ids = [x.assignment_id for x in queryset]
             add_five_minutes_to_deadlines.delay(request.user.username, assignment_ids)
             messages.info(request, "Adding five minutes to deadlines. This action is not instantaneous. Please check back later.")
+
 
 class DateAdmin(admin.ModelAdmin):
     list_display = ("label", "start", "finish")
