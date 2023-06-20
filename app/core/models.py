@@ -9,6 +9,7 @@ class Course(models.Model):
     course_id = models.IntegerField(null=True, blank=True)
     course_name = models.CharField(max_length=128)
     course_department = models.ForeignKey(Department, null=True, blank=True, on_delete=models.PROTECT)
+    resit_course = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
         
     def __str__(self):
         return self.course_code

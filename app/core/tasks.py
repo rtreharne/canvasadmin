@@ -9,6 +9,7 @@ from accounts.models import UserProfile
 from datetime import datetime, timedelta
 from accounts.models import Department
 from celery.utils.log import get_task_logger
+import time
 
 logger = get_task_logger(__name__)
 
@@ -1014,6 +1015,77 @@ def task_get_enrollments_by_course(username, course_id):
         #except:
             #print("Couldn't add enrollment")
             #continue
+
+@shared_task
+def task_copy_to_resit_course(username, assignment_id):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    # Create a canvas handle
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    # Get the assignment object from Lens
+    assignment = Assignment.objects.get(assignment_id=assignment_id)
+
+    # Check if resit course has been assigned to course
+    if Course.objects.get(course_id=assignment.course.course_id).resit_course is None:
+        return None
+
+    # Get course object from Canvas
+    course = canvas.get_course(assignment.course.course_id)
+
+    # Get the original assignment object from Canvas
+    old_assignment = canvas.get_course(course.id).get_assignment(assignment_id)
+
+
+
+
+    resit_course = canvas.get_course(Course.objects.get(course_id=assignment.course.course_id).resit_course.course_id)
+
+    resit_course_assignments = [x.name for x in resit_course.get_assignments()]
+
+    if "RESIT " + assignment.assignment_name not in resit_course_assignments:
+
+        resit_course.create_content_migration(
+            migration_type="course_copy_importer",
+            settings={"source_course_id": str(course.id)},
+            select={"assignments": [assignment_id]}
+        )
+
+        start = time.time()
+
+        """
+        Create a while loop that runs for 20 minutes. If the migration is complete, break the loop. If not, wait 30 seconds and try again.
+        """
+        while True:
+            try:
+                new_assignment = [x for x in resit_course.get_assignments() if x.name == old_assignment.name][0]
+                print("Old Assignment Name", old_assignment.name, "Assignment Lens Name", assignment.assignment_name)
+                new_assignment.edit(
+                    assignment={"name": "RESIT " + assignment.assignment_name,
+                                "unlock_at": "",
+                                "lock_at": "",
+                                "due_at": ""},
+                )
+            except:
+                print("no dice")
+
+                if time.time() - start > 1800:
+                    break
+                else:
+                    time.sleep(30)
+                    continue
+
+            break
+        return None
+    else:
+        return "Assignment already exists in resit course"
+
+
+
+
+
 
 
 

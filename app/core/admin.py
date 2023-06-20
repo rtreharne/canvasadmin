@@ -5,7 +5,7 @@ from canvasapi import Canvas
 from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
 from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines, task_apply_cat_bs, task_apply_cat_cs, task_get_enrollments_by_courses
 from django.contrib.admin import DateFieldListFilter
-from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions
+from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
@@ -424,7 +424,15 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
 
     #readonly_fields = ('assignment_name','course', 'assignment_id', 'url', 'unlock_at', 'due_at', 'lock_at', 'needs_grading_count', 'published', 'anonymous_grading')
 
-    actions = ["admin_anonymise", "admin_deanonymise", export_as_csv_action(), "sync_assignments", "get_submissions", "task_add_five_minutes_to_deadlines", "update_assignment_deadlines", "make_inactive"]
+    actions = ["admin_anonymise", 
+               "admin_deanonymise", 
+               export_as_csv_action(), 
+               "sync_assignments", 
+               "get_submissions", 
+               "task_add_five_minutes_to_deadlines", 
+               "update_assignment_deadlines", 
+               "make_inactive",
+               "copy_to_resit_course"]
 
     list_editable = ('active', 'quiz')
 
@@ -581,6 +589,15 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
             assignment_ids = [x.assignment_id for x in queryset]
             add_five_minutes_to_deadlines.delay(request.user.username, assignment_ids)
             messages.info(request, "Adding five minutes to deadlines. This action is not instantaneous. Please check back later.")
+
+    @admin.action(description="Copy to resit course")
+    @confirm_action
+    def copy_to_resit_course(modeladmin, request, queryset):
+        if request.user.is_staff:
+            assignment_ids = [x.assignment_id for x in queryset]
+            for assignment_id in assignment_ids:
+                task_copy_to_resit_course.delay(request.user.username, assignment_id)
+            messages.info(request, "Copying to resit course. This action is not instantaneous. Please check back later.")
 
 
 class DateAdmin(admin.ModelAdmin):
