@@ -752,6 +752,27 @@ def add_five_minutes_to_deadline(username, assignment_id):
 
 def datetime_to_json(dt):
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+@shared_task()
+def task_assign_resit_course_to_courses(username, course_pks, resit_course_id):
+    for course_pk in course_pks:
+        task_assign_resit_course_to_course(username, course_pk, resit_course_id)
+    return "Done"
+
+@shared_task()
+def task_assign_resit_course_to_course(username, course_pk, resit_course_id):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    course = Course.objects.get(pk=course_pk)
+    resit_course = Course.objects.get(pk=resit_course_id)
+
+    try:
+        course.resit_course = resit_course
+        course.save()
+    except:
+        print("Couldn't assign resit course")
     
     
 @shared_task
@@ -1038,14 +1059,13 @@ def task_copy_to_resit_course(username, assignment_id):
     # Get the original assignment object from Canvas
     old_assignment = canvas.get_course(course.id).get_assignment(assignment_id)
 
-
-
-
     resit_course = canvas.get_course(Course.objects.get(course_id=assignment.course.course_id).resit_course.course_id)
 
     resit_course_assignments = [x.name for x in resit_course.get_assignments()]
 
-    if "RESIT " + assignment.assignment_name not in resit_course_assignments:
+    consolidated_title = consolidate_title(assignment.assignment_name)
+
+    if "RESIT " + consolidated_title not in resit_course_assignments:
 
         resit_course.create_content_migration(
             migration_type="course_copy_importer",
@@ -1061,28 +1081,63 @@ def task_copy_to_resit_course(username, assignment_id):
         while True:
             try:
                 new_assignment = [x for x in resit_course.get_assignments() if x.name == old_assignment.name][0]
+                compare_assignments = [x.name for x in resit_course.get_assignments()]
+                if "RESIT " + consolidated_title in compare_assignments:
+                    new_assignment.delete()
+                    print("Assignment already exists in resit course")
                 print("Old Assignment Name", old_assignment.name, "Assignment Lens Name", assignment.assignment_name)
                 new_assignment.edit(
-                    assignment={"name": "RESIT " + assignment.assignment_name,
+                    assignment={"name": "RESIT " + consolidated_title,
                                 "unlock_at": "",
                                 "lock_at": "",
-                                "due_at": ""},
+                                "due_at": "",
+                                "description": ""},
                 )
             except:
                 print("no dice")
 
-                if time.time() - start > 1800:
+                if time.time() - start > 300:
                     break
                 else:
                     time.sleep(30)
                     continue
 
             break
+
+        # Remove duplicate assignments
+        all_assignments = [x for x in resit_course.get_assignments()]
+        assignment_names = [x.name for x in all_assignments]
+
+        for assignment_name in assignment_names:
+            if assignment_names.count(assignment_name) > 1:
+
+                assignments_to_delete = [x for x in all_assignments if x.name == assignment_name][1:]
+                for assignment_to_delete in assignments_to_delete:
+                    try:
+                        assignment_to_delete.delete()
+                    except:
+                        continue
         return None
     else:
         return "Assignment already exists in resit course"
 
-
+def consolidate_title(title):
+  if "surname" in title.lower():
+    new_title = title.split(".")
+    if len(new_title[1])==1:
+      label = ".".join(new_title[:2])
+      end = new_title[2][1:]
+      new_title = label+end
+    new_title = new_title.upper()
+    if "STUDENT" in new_title:
+      new_title = new_title.split("STUDENT")[0]
+    if "SURNAME" in new_title:
+      new_title = new_title.split("SURNAME")[0]
+    if new_title[-2:-1] == "-":
+      new_title = new_title[:-2]
+    return new_title.strip()
+  else:
+    return title
 
 
 

@@ -5,13 +5,13 @@ from canvasapi import Canvas
 from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
 from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines, task_apply_cat_bs, task_apply_cat_cs, task_get_enrollments_by_courses
 from django.contrib.admin import DateFieldListFilter
-from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course
+from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course, task_assign_resit_course_to_courses
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
 from .filters import AssignmentDateFilter, SubmissionDateFilter
 from datetime import datetime
-from .forms import CsvImportForm, AssignmentDatesUpdateForm
+from .forms import CsvImportForm, AssignmentDatesUpdateForm, AssignResitForm
 from django.urls import path
 import csv
 from django.shortcuts import render, redirect
@@ -38,7 +38,8 @@ class CourseAdmin(admin.ModelAdmin):
 
     actions = ["admin_get_assignments_by_course",
                "admin_get_enrollments_by_course",
-                export_as_csv_action(),]
+                export_as_csv_action(),
+                "assign_resit_course"]
 
     change_list_template = "core/courses_changelist.html"
 
@@ -88,6 +89,24 @@ class CourseAdmin(admin.ModelAdmin):
             course_ids = [x.course_id for x in queryset]
             task_get_enrollments_by_courses.delay(request.user.username, course_ids)
             messages.info(request, "Getting Enrollments! This action is not instantaneous. Please check back later.")
+
+    def assign_resit_course(self, request, queryset):
+        print("Hi rob", request.POST)
+        if 'apply'in request.POST:
+            print("Hello World", request.POST)
+            resit_course_pk = request.POST.get("resit_course", None)
+            if resit_course_pk is not None:
+                resit_course_pk = int(resit_course_pk)
+            course_pks = [x.id for x in queryset]
+            print("course_pks", course_pks)
+            task_assign_resit_course_to_courses.delay(request.user.username, course_pks, resit_course_pk)
+            self.message_user(request, "Your request has been submitted. Your assignments will update shortly. Keep refreshing.")
+            return redirect(".")
+        form = AssignResitForm()
+        payload = {'form': form, 'courses': queryset}
+        return render(
+            request, "core/assign_resit_course_form.html", payload
+        )
 
 
 class StudentAdmin(admin.ModelAdmin):
@@ -432,7 +451,8 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
                "task_add_five_minutes_to_deadlines", 
                "update_assignment_deadlines", 
                "make_inactive",
-               "copy_to_resit_course"]
+               "copy_to_resit_course",
+               ]
 
     list_editable = ('active', 'quiz')
 
