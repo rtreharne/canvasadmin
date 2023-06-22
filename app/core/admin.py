@@ -5,7 +5,7 @@ from canvasapi import Canvas
 from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
 from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines, task_apply_cat_bs, task_apply_cat_cs, task_get_enrollments_by_courses
 from django.contrib.admin import DateFieldListFilter
-from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course, task_assign_resit_course_to_courses
+from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course, task_assign_resit_course_to_courses, task_make_only_visible_to_overrides
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
@@ -452,6 +452,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
                "update_assignment_deadlines", 
                "make_inactive",
                "copy_to_resit_course",
+               "make_only_visible_to_overrides"
                ]
 
     list_editable = ('active', 'quiz')
@@ -618,6 +619,16 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
             for assignment_id in assignment_ids:
                 task_copy_to_resit_course.delay(request.user.username, assignment_id)
             messages.info(request, "Copying to resit course. This action is not instantaneous. Please check back later.")
+
+    @admin.action(description="Make selected only visible to overrides")
+    @confirm_action
+    def make_only_visible_to_overrides(modeladmin, request, queryset):
+        if request.user.is_staff:
+            assignment_ids = [x.assignment_id for x in queryset]
+            for assignment_id in assignment_ids:
+                task_make_only_visible_to_overrides.delay(request.user.username, assignment_id)
+            messages.info(request, "Making assignments only visible to overrides. This action is not instantaneous. Please check back later.")
+
 
 
 class DateAdmin(admin.ModelAdmin):

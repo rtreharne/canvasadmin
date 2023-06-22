@@ -175,6 +175,10 @@ def get_assignments_by_course(username, course_id):
     assignments = [x for x in course.get_assignments()]
     for assignment in assignments:
         summary = get_submission_summary(API_URL, API_TOKEN, course.id, assignment.id)
+        if "online_upload" in assignment.submission_types:
+            quiz=False
+        else:
+            quiz=True
 
         try:
             pc_graded = float("{:.2f}".format(100*summary["graded"]/(summary["graded"]+summary["ungraded"])))
@@ -199,7 +203,7 @@ def get_assignments_by_course(username, course_id):
                 ungraded = summary["ungraded"],
                 pc_graded = pc_graded,
                 not_submitted = summary["not_submitted"],
-                #types = assignment.submission_types
+                quiz=quiz,
 
             ).save()
             print("Assignment saved")
@@ -1091,7 +1095,8 @@ def task_copy_to_resit_course(username, assignment_id):
                                 "unlock_at": "",
                                 "lock_at": "",
                                 "due_at": "",
-                                "description": ""},
+                                "description": "",
+                                "only_visible_to_overrides": True},
                 )
             except:
                 print("no dice")
@@ -1105,20 +1110,10 @@ def task_copy_to_resit_course(username, assignment_id):
             break
 
         # Remove duplicate assignments
-        all_assignments = [x for x in resit_course.get_assignments()]
-        assignment_names = [x.name for x in all_assignments]
-
-        for assignment_name in assignment_names:
-            if assignment_names.count(assignment_name) > 1:
-
-                assignments_to_delete = [x for x in all_assignments if x.name == assignment_name][1:]
-                for assignment_to_delete in assignments_to_delete:
-                    try:
-                        assignment_to_delete.delete()
-                    except:
-                        continue
+        delete_duplicate_assignments(resit_course)
         return None
     else:
+        delete_duplicate_assignments(resit_course)
         return "Assignment already exists in resit course"
 
 def consolidate_title(title):
@@ -1138,6 +1133,47 @@ def consolidate_title(title):
     return new_title.strip()
   else:
     return title
+
+@shared_task
+def task_make_only_visible_to_overrides(username, assignment_id):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    # Create a canvas handle
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    # Get the assignment object from Lens
+    assignment = Assignment.objects.get(assignment_id=assignment_id)
+
+    # Get course object from Canvas
+    course = canvas.get_course(assignment.course.course_id)
+
+    # Get the original assignment object from Canvas
+    old_assignment = canvas.get_course(course.id).get_assignment(assignment_id)
+
+    old_assignment.edit(
+        assignment={"only_visible_to_overrides": True}
+    )
+
+def delete_duplicate_assignments(course):
+    # Remove duplicate assignments
+        all_assignments = [x for x in course.get_assignments()]
+        for assignment in all_assignments:
+            if assignment.title != consolidate_title(assignment.title):
+                assignment.edit(assignment={"name": consolidate_title(assignment.name)})
+                
+        assignment_names = [x.name for x in all_assignments]
+
+        for assignment_name in assignment_names:
+            if assignment_names.count(assignment_name) > 1:
+
+                assignments_to_delete = [x for x in all_assignments if x.name == assignment_name][1:]
+                for assignment_to_delete in assignments_to_delete:
+                    try:
+                        assignment_to_delete.delete()
+                    except:
+                        continue
 
 
 
