@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from accounts.models import Department
 from celery.utils.log import get_task_logger
 import time
+import re
 
 logger = get_task_logger(__name__)
 
@@ -1160,7 +1161,7 @@ def delete_duplicate_assignments(course):
     # Remove duplicate assignments
         all_assignments = [x for x in course.get_assignments()]
         for assignment in all_assignments:
-            if assignment.name != consolidate_title(assignment.title):
+            if assignment.name != consolidate_title(assignment.name):
                 assignment.edit(assignment={"name": consolidate_title(assignment.name)})
 
         assignment_names = [x.name for x in all_assignments]
@@ -1174,6 +1175,58 @@ def delete_duplicate_assignments(course):
                         assignment_to_delete.delete()
                     except:
                         continue
+
+@shared_task
+def task_create_assignment_summary(username, course_id):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    # Create a canvas handle
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    # Get course object from Canvas
+    course = canvas.get_course(int(course_id))
+
+    # Get all assignments
+    assignments = sorted([x for x in course.get_assignments()], key=lambda x: x.name)
+
+    course_code_set = sorted(list(set([find_substring(x.name) for x in assignments if find_substring(x.name) != None])))
+
+    page_html = ""
+
+    for course_code in course_code_set:
+        page_html += "<h2>{}</h2>".format(course_code)
+        page_html += "<table>"
+        for assignment in assignments:
+            if find_substring(assignment.name) == course_code:
+                speed_grader_url = API_URL+"/courses/{}/gradebook/speed_grader?assignment_id={}".format(course_id, assignment.id)
+                page_html += "<tr><td>{}</td><td><a href='{}'>Edit</a></td><td><a href='{}'>SpeedGrader</a></td></tr>".format(assignment.name, assignment.html_url, speed_grader_url)
+        page_html += "</table><br>"
+
+    # If page exists, delete it
+    try:
+        course.get_page("assignment-directory").delete()
+    except:
+        pass
+            
+    # Create page
+    course.create_page(
+        wiki_page={"title": "Assignment Directory",
+                    "body": page_html,
+                    "published": False}
+    )
+
+def find_substring(string):
+    pattern = r'[A-Z]{4}\d{3}'
+    matches = re.findall(pattern, string)
+    try:
+      return matches[0]
+    except:
+      return None
+
+
+
 
 
 
