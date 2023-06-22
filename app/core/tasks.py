@@ -1160,9 +1160,9 @@ def delete_duplicate_assignments(course):
     # Remove duplicate assignments
         all_assignments = [x for x in course.get_assignments()]
         for assignment in all_assignments:
-            if assignment.title != consolidate_title(assignment.title):
+            if assignment.name != consolidate_title(assignment.title):
                 assignment.edit(assignment={"name": consolidate_title(assignment.name)})
-                
+
         assignment_names = [x.name for x in all_assignments]
 
         for assignment_name in assignment_names:
