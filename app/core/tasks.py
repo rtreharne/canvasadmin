@@ -1197,12 +1197,34 @@ def task_create_assignment_summary(username, course_id):
 
     for course_code in course_code_set:
         page_html += "<h2>{}</h2>".format(course_code)
-        page_html += "<table>"
+        page_html += '''<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}
+.tg-title{width:50%}
+</style>
+<table class="tg" style="width:75%">
+<tbody>'''
         for assignment in assignments:
             if find_substring(assignment.name) == course_code:
+                # create a truncated name variable that is exactly 128 characters long
+                # If it's length is less than 238 then make it up with spaces
+                if len(assignment.name) > 128:
+                    truncated_name = assignment.name[:128]+"..."
+                else:
+                    truncated_name = assignment.name + " "*(125-len(assignment.name))
+                    
+
                 speed_grader_url = API_URL+"/courses/{}/gradebook/speed_grader?assignment_id={}".format(course_id, assignment.id)
-                page_html += "<tr><td>{}</td><td><a href='{}'>Edit</a></td><td><a href='{}'>SpeedGrader</a></td></tr>".format(assignment.name, assignment.html_url, speed_grader_url)
-        page_html += "</table><br>"
+                page_html += '<tr>'
+                page_html += '<td class="tg-0pky" style="width: 100%">{}</td>'.format(truncated_name)
+                page_html += '<td class="tg-0pky"><a href="{}">Edit</a></td>'.format(assignment.html_url)
+                page_html += '<td class="tg-0pky"><a href="{}">SpeedGrader</a></td>'.format(speed_grader_url)
+                page_html += '</tr>'
+        page_html += "</tbody></table><br>"
 
     # If page exists, delete it
     try:
