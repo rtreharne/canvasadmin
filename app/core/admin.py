@@ -5,7 +5,7 @@ from canvasapi import Canvas
 from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
 from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines, task_apply_cat_bs, task_apply_cat_cs, task_get_enrollments_by_courses
 from django.contrib.admin import DateFieldListFilter
-from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course, task_assign_resit_course_to_courses, task_make_only_visible_to_overrides, task_create_assignment_summary
+from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course, task_assign_resit_course_to_courses, task_make_only_visible_to_overrides, task_create_assignment_summary, task_enroll_teachers_on_resit_course
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
@@ -40,6 +40,7 @@ class CourseAdmin(admin.ModelAdmin):
                "admin_get_enrollments_by_course",
                 export_as_csv_action(),
                 "assign_resit_course",
+                "enroll_teachers_on_resit_course",
                 "create_assignment_summary"]
 
     change_list_template = "core/courses_changelist.html"
@@ -116,6 +117,14 @@ class CourseAdmin(admin.ModelAdmin):
             for course_id in course_ids:
                 task_create_assignment_summary.delay(request.user.username, course_id)
             messages.info(request, "Creating Assignment Summary! This action is not instantaneous. Please check back later.")
+    
+    @admin.action(description="Enroll Teachers On Resit Course")
+    def enroll_teachers_on_resit_course(modeladmin, request, queryset):
+        if request.user.is_staff:
+            course_ids = [x.course_id for x in queryset]
+            for course_id in course_ids:
+                task_enroll_teachers_on_resit_course.delay(request.user.username, course_id)
+            messages.info(request, "Enrolling Teachers on Resit Course! This action is not instantaneous. Please check back later.")
 
 
 class StudentAdmin(admin.ModelAdmin):

@@ -2,8 +2,38 @@ from django.db import models
 from core.models import Student, Course, Assignment
 from accounts.models import UserProfile
 from core.models import Assignment
+import uuid
+from django.core.exceptions import ValidationError
+
+class Date(models.Model):
+    label = models.CharField(max_length=128)
+    start = models.DateField(null=True, blank=True)
+    finish = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return self.label
+    
+    """
+    start and finish date range for Date objects cannot overlap.
+    """
+    def clean(self):
+        if self.start and self.finish:
+            if self.start > self.finish:
+                raise ValidationError("Start date must be before finish date")
+            if Date.objects.filter(start__lte=self.finish, finish__gte=self.start).exclude(pk=self.pk).exists():
+                raise ValidationError("Date range overlaps with another date range")
+            
+
+
 
 class Extension(models.Model):
+
+    """
+    Give Extension model class a verbose name of "Record
+    """
+    class Meta:
+        verbose_name = "Record"
+        verbose_name_plural = "Records"
 
     EXTENSION_CHOICES = (
         ('EXTENSION', 'Extension'),
@@ -12,7 +42,7 @@ class Extension(models.Model):
 
     unique_id = models.IntegerField(null=True, blank=True, editable=False)
     student = models.ForeignKey(Student, verbose_name="Student", on_delete=models.PROTECT, null=True, blank=True)
-    extension_type = models.CharField(max_length=128, choices=EXTENSION_CHOICES, default='EXTENSION')
+    extension_type = models.CharField(max_length=128, choices=EXTENSION_CHOICES, default='ELP')
     date_of_application = models.DateTimeField(auto_now_add=True)
     course = models.ForeignKey(Course, on_delete=models.PROTECT, null=True, blank=True, editable=False)
     assignment = models.ForeignKey(Assignment, on_delete=models.PROTECT, verbose_name="Assignment")
@@ -23,7 +53,14 @@ class Extension(models.Model):
     original_deadline = models.DateTimeField(null=True, blank=True, editable=False)
     apply_to_subcomponents = models.BooleanField(default=False)
     reason = models.TextField(null=True, blank=True)
-    files = models.FileField(upload_to='extensions/', null=True, blank=True)
+    files = models.FileField(upload_to='extensions/', null=True, blank=True, verbose_name="Evidence upload")
+
+    # Create a confirmation id field using uuid
+    confirmation_id = models.UUIDField(default=uuid.uuid4, editable=False, null=True, blank=True)
+    confirmed = models.BooleanField(default=False)
+
+
+
 
     def __str__(self):
         return str(self.student_id)
@@ -42,5 +79,6 @@ class Extension(models.Model):
                 new_extension.apply_to_subcomponents = False
                 new_extension.save()
         super(Extension, self).save(*args, **kwargs)
+        return self
 
 

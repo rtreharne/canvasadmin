@@ -48,6 +48,66 @@ def task_create_extension(row):
             task_create_extension(new_row)
 
 @shared_task
+def send_receipt(extension, current_host):
+    department = extension.assignment.course.course_department
+    API_URL = department.CANVAS_API_URL
+    API_TOKEN = department.CANVAS_API_TOKEN
+    
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    student = extension.student
+
+    # Get the student's email address
+    student_email = extension.student.login_id
+
+    # Get the assignment name
+    assignment_name = extension.assignment.assignment_name
+
+    # Get the course name
+    course_name = extension.assignment.course.course_name
+
+    # Get the extension deadline
+    extension_deadline = extension.extension_deadline
+
+    # Get the original deadline
+    original_deadline = extension.original_deadline
+
+    # Generate a confirmation url from the extension unique_id
+    confirmation_url = current_host + '/forms/confirm/' + "{}".format(extension.confirmation_id)
+
+    message_html = ""
+    message_html += "Dear {},\n\n".format(extension.student.sortable_name.split(",")[1].strip())
+    message_html += "Your request for an excemption from late penalty (ELP) has been received and is being processed.\n\n"
+    message_html += "Course: {}\n\n".format(course_name)
+    message_html += "Assignment: {}\n\n".format(assignment_name)
+    message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    message_html += "Extension deadline: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+
+    message_html += "Please click the link below to confirm your request (you may need to coy and past the link into your browser).\n\n"
+    message_html += "http://{}\n\n".format(confirmation_url)
+    
+    message_html += "This is an automated message. Please do not reply to this email.\n\n"
+
+    
+
+
+
+    
+
+    # create Canvas conversation
+    try:
+        conversation = canvas.create_conversation(
+            recipients=[101],
+            subject="Application for ELP Confirmation",
+            body=message_html,
+            scope="unread",
+            context_code="course_{}".format(extension.assignment.course.course_id)
+        )
+        return conversation
+    except:
+        return None
+
+@shared_task
 def task_apply_overrides(username, extension_pks):
     extensions = Extension.objects.filter(id__in=extension_pks)
     for extension in extensions:

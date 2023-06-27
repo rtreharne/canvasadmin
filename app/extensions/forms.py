@@ -1,7 +1,8 @@
 from django import forms
 from core.models import Student, Assignment
 from enrollments.models import Enrollment
-from extensions.models import Extension
+from extensions.models import Extension, Date
+import datetime
 
 class CsvImportForm(forms.Form):
     csv_file = forms.FileField()
@@ -12,7 +13,7 @@ class StudentIdForm(forms.Form):
     It should be validated against the sis_user_id field in the Student model.
     The input integer should be 9 digits long and should be in the string of the sis_user_id field.
     """
-    student_id = forms.IntegerField()
+    student_id = forms.IntegerField(label="Student ID")
 
     def clean_student_id(self):
         student_id = self.cleaned_data['student_id']
@@ -62,26 +63,49 @@ class AssignmentForm(forms.Form):
     """
 
     def __init__(self, *args, **kwargs):
+        print("kwargs:", kwargs)
+        print("args:", args)
         course_canvas_id = kwargs.pop('course_canvas_id', None)
+        student_id = kwargs.pop('student_id', None)
         super(AssignmentForm, self).__init__(*args, **kwargs)
         choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in Assignment.objects.filter(course__course_id=course_canvas_id, active=True)]
         self.fields['assignment'] = forms.ChoiceField(
             choices=choices
-            )
-        self.fields['extension_type'] = forms.ChoiceField(
-            choices=[('EXTENSION', 'Extension'), ('ELP', 'Exemption from late penalty (ELP)')]
-            )
-        self.fields['extension'] = forms.ChoiceField(
-            choices=[(1, '1 week'), (2, '2 weeks')]
-            )
+            )            
         self.fields['reason'] = forms.CharField(
             widget=forms.Textarea
             )
-        self.fields['files'] = forms.FileField(
-            required=False
-            )
-        
 
+        student = Student.objects.get(sis_user_id__contains=str(student_id))
+
+        # get current datetime
+        now = datetime.datetime.now()
+
+        # get Date objects that are active and have a start date before now and a finish date after now
+        date = Date.objects.get(start__lte=now, finish__gte=now)
+        print("Dates:", date.start, date.finish, now)
+
+        # get count of approved extensions for the student that are within the current date range and have no files attached
+        count = Extension.objects.filter(student=student, extension_deadline__lte=date.finish, extension_deadline__gte=date.start, approved=True, files__exact="").count()
+
+        print("count:", count)
+
+        if count <2:
+            file_required = False
+            file_help_text = "If you choose not to upload evidence (e.g. a medical note/certificate) then this application will be approved automatically and you will use one of your available extensions."
+        else:
+            file_required = True
+            file_help_text = "You have already had two ELPs approved for the current period. You must upload evidence (e.g. a medical note/certificate) to support your application."
+
+
+        self.fields['files'] = forms.FileField(
+        required=file_required,
+        label="Evidence upload",
+        help_text=file_help_text,
+
+        )
+        
+  
 
 
 

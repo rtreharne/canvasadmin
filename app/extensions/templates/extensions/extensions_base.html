@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <!--
     Use bootstrap to provide some basic styling.
@@ -8,18 +9,40 @@
     <meta charset="UTF-8">
     <title>Extensions</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'extensions/css/extensions.css' %}">
 </head>
 
 <body>
     <div class="container">
         <div class="row">
-            <div class="col-md-12">
-                <h1>Extension Application Form</h1>
+            <div class="col-md-2">
+            </div>    
+
+            <div class="col-md-8">
+                <div>
+                    <a href="/forms/"><img src="{% static 'extensions/img/full_color_logo.png' %}" alt="Liverpool Logo" class="logo"></a>
+                </div>
+                <hr>
+                <h1>Student Application Form</h3>
+                <h3>Exemption From Late Penalty</h2>
                 {% block content %}
                 {% endblock content %}
             </div>
         </div>
     </div>
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-2">
+                </div>    
+
+                <div class="col-md-8">
+                    <hr>
+                    <p>Canvas Lens &copy; 2023</p>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 
 </html>

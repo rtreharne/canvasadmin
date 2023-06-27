@@ -1246,6 +1246,31 @@ def find_substring(string):
       return matches[0]
     except:
       return None
+    
+@shared_task
+def task_enroll_teachers_on_resit_course(username, course_id):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    course = canvas.get_course(course_id)
+
+    resit_course_id = Course.objects.get(course_id=course_id).resit_course.course_id
+
+    try:
+        resit_course = canvas.get_course(resit_course_id)
+    except:
+        return None
+
+    teachers = [x for x in course.get_enrollments() if x.type=="TeacherEnrollment"]
+
+    for teacher in teachers:
+        try:
+            resit_course.enroll_user(teacher.user_id, enrollment_type="TeacherEnrollment", enrollment={"enrollment_type": "TeacherEnrollment",
+                                                                  "enrollment_state": "active"})
+        except:
+            print("Couldn't enroll teacher")
 
 
 

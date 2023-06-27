@@ -1,12 +1,13 @@
 {% extends "extensions/extensions_base.html" %}
+{% load crispy_forms_tags %}
 
 {% block content %}
 
-    <p>Select the course you want to apply for an extension/ELP for.</p>
+    <p>Select the course you want to ELP for.</p>
 
     <form action="" method="post">
         {% csrf_token %}
-        {{ form }}
+        {{ form|crispy }}
         <input type="submit" value="Next" />
     </form>
 

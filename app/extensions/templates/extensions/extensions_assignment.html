@@ -5,12 +5,17 @@
 -->
 
 {% block content %}
+{% load crispy_forms_tags %}
 
     <p>Select the assignment and complete the form.</p>
 
+    {% if error_message %}
+        {{ error_message | safe }}
+    {% endif %}
+
     <form action="" method="post">
         {% csrf_token %}
-        {{ form.as_p }}
+        {{ form|crispy }}
         <input type="submit" value="Submit" />
     </form>
 

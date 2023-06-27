@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Extension
+from .models import Extension, Date
 from .forms import CsvImportForm
 from django.urls import path
 import csv
@@ -21,6 +21,7 @@ class ExtensionAdmin(admin.ModelAdmin):
         "extension_deadline",
         "approved",
         "approved_by",
+        "confirmed"
     )
 
     list_filter = (
@@ -109,3 +110,4 @@ class ExtensionAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Extension, ExtensionAdmin)
+admin.site.register(Date)
