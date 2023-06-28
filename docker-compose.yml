@@ -23,7 +23,7 @@ services:
       - ./data/web:/vol/web
     environment:
       - SECRET_KEY=changeme
-      - DEBUG=1
+      - DEBUG=0
       - DB_HOST=db
       - DB_NAME=dbname
       - DB_USER=rootuser
