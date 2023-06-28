@@ -469,6 +469,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
                "task_add_five_minutes_to_deadlines", 
                "update_assignment_deadlines", 
                "make_inactive",
+               "make_active",
                "copy_to_resit_course",
                "make_only_visible_to_overrides"
                ]
@@ -555,6 +556,15 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
 
             for a in queryset:
                 a.active = False
+                a.save()
+
+    @admin.action(description="Make selected active")
+    def make_active(modeladmin, request, queryset):
+        if request.user.is_staff:
+            user_profile = UserProfile.objects.get(user=request.user)
+
+            for a in queryset:
+                a.active = True
                 a.save()
     
     @admin.action(description="Anonymize selected assignments")
