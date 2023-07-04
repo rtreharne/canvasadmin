@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'modules',
     'extensions',
     'enrollments',
+    'front'
     
 ]
 

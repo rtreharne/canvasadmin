@@ -65,6 +65,12 @@ Here is the Canvas Community Guide on how to manage/create API tokens:
 
 https://community.canvaslms.com/t5/Admin-Guide/How-do-I-manage-API-access-tokens-as-an-admin/ta-p/89
 
+### Step 5 - Run scheduler
+
+```bash
+docker-compose run -d --rm app sh -c "celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+```
+
 
 ## Deploying to AWS EC2 
 
@@ -158,6 +164,11 @@ docker-compose -f docker-compose-deploy.yml run --user root --rm app sh -c "pyth
 Start the container (use -d flag at end to run in background).
 ```bash
 docker-compose -f docker-compose-deploy.yml up -d
+```
+
+Start the scheduler
+```bash
+docker-compose run -d --rm app sh -c "celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
 ```
 
 If you want to stop the container.
