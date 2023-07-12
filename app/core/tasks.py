@@ -781,13 +781,13 @@ def task_assign_resit_course_to_course(username, course_pk, resit_course_id):
     
     
 @shared_task
-def task_update_assignment_deadlines(username, assignment_pks, time_string):
+def task_update_assignment_deadlines(username, assignment_pks, unlock_time_string, deadline_time_string, lock_time_string, only_visible_to_overrides):
     for assignment_pk in assignment_pks:
-        task_update_assignment_deadline(username, assignment_pk, time_string)
+        task_update_assignment_deadline(username, assignment_pk, unlock_time_string, deadline_time_string, lock_time_string, only_visible_to_overrides)
     return "Done"
 
 @shared_task
-def task_update_assignment_deadline(username, assignment_id, time_string):
+def task_update_assignment_deadline(username, assignment_id, unlock_time_string, deadline_time_string, lock_time_string, only_visible_to_overrides):
         
     user = UserProfile.objects.get(user__username=username)
     API_URL = user.department.CANVAS_API_URL
@@ -799,13 +799,28 @@ def task_update_assignment_deadline(username, assignment_id, time_string):
 
     canvas_course = canvas.get_course(assignment.course.course_id)
     canvas_assignment = canvas_course.get_assignment(assignment.assignment_id)
+
     try:    
-        canvas_assignment.edit(assignment={"due_at": time_string})
+        canvas_assignment.edit(assignment={
+            "due_at": deadline_time_string,
+            "unlock_at": unlock_time_string,
+            "lock_at": lock_time_string
+            })
     except:
-        canvas_assignment.edit(assignment={"due_at": time_string, "lock_at": time_string})
+        pass
+
+    if only_visible_to_overrides:
+        canvas_assignment.edit(
+            assignment = {
+                "only_visible_to_overrides": only_visible_to_overrides
+            }
+        )
 
     
-    assignment.due_at = json_to_datetime(time_string)
+    assignment.due_at = json_to_datetime(deadline_time_string)
+    assignment.unlock_at = json_to_datetime(unlock_time_string)
+    assignment.lock_at = json_to_datetime(lock_time_string)
+    assignment.save()
 
     assignment.save()
     print("assignment saved!")

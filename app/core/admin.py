@@ -503,11 +503,23 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
             module_pks = request.POST.get("_selected_action")
             unlock_date = request.POST.get("unlock_date", None)
             unlock_time = request.POST.get("unlock_time", None)
+
+            deadline_date = request.POST.get("deadline_date", None)
+            deadline_time = request.POST.get("deadline_time", None)
+
+            lock_date = request.POST.get("lock_date", None)
+            lock_time = request.POST.get("lock_time", None)
+
             publish = request.POST.get("force_publish", None)
 
-            time_string = unlock_date + "T" + unlock_time + ":00Z"
+            only_visible_to_overrides = request.POST.get("only_visible_to_overrides", None)
+
+            unlock_time_string = unlock_date + "T" + unlock_time + ":00Z"
+            deadline_time_string = deadline_date + "T" + deadline_time + ":00Z"
+            lock_time_string = lock_date + "T" + lock_time + ":00Z"
+
             assignment_pks = [x.id for x in queryset]
-            task_update_assignment_deadlines.delay(request.user.username, assignment_pks, time_string)
+            task_update_assignment_deadlines.delay(request.user.username, assignment_pks, unlock_time_string, deadline_time_string, lock_time_string, only_visible_to_overrides)
             self.message_user(request, "Your request has been submitted. Your assignments will update shortly. Keep refreshing.")
             return redirect(".")
         form = AssignmentDatesUpdateForm()

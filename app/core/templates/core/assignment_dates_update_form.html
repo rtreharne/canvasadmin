@@ -8,7 +8,7 @@
             <p style="color: red;">Are you sure you want to execute this action on the selected items? This cannot be undone.</p>
             {% for assignment in assignments %}
             <strong>
-                {{ assignment }}: {{ assignment.course }}, Deadline At {{ assignment.due_at }}</br>
+                {{ assignment }}: {{ assignment.course }}</br>
             </strong>
             <input type="hidden" name="_selected_action" value="{{ assignment.pk }}" />
             {% endfor %}
