@@ -10,3 +10,4 @@ django-jazzmin==2.6.0
 django-suit==0.2.28
 django-rangefilter==0.9.1
 django-admin-confirm==1.0.0
+

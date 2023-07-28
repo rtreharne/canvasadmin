@@ -1172,6 +1172,8 @@ def task_make_only_visible_to_overrides(username, assignment_id):
         assignment={"only_visible_to_overrides": True}
     )
 
+    return "Done"
+
 def delete_duplicate_assignments(course):
     # Remove duplicate assignments
         all_assignments = [x for x in course.get_assignments()]
@@ -1204,7 +1206,7 @@ def task_create_assignment_summary(username, course_id):
     course = canvas.get_course(int(course_id))
 
     # Get all assignments
-    assignments = sorted([x for x in course.get_assignments()], key=lambda x: x.name)
+    assignments = sorted([x for x in course.get_assignments(include=["overrides"])], key=lambda x: x.name)
 
     course_code_set = sorted(list(set([find_substring(x.name) for x in assignments if find_substring(x.name) != None])))
 
@@ -1222,6 +1224,17 @@ def task_create_assignment_summary(username, course_id):
 .tg-title{width:50%}
 </style>
 <table class="tg" style="width:75%">
+<thead>
+      <tr>
+        <th>Assignment Name</th>
+        <th>Resitting Students</th>
+        <th>Unlock At</th>
+        <th>Deadline At</th>
+        <th>Lock At</th>
+        <th>Edit</th>
+        <th>SpeedGrader</th>
+      </tr>
+    </thead>
 <tbody>'''
         for assignment in assignments:
             if find_substring(assignment.name) == course_code:
@@ -1231,13 +1244,37 @@ def task_create_assignment_summary(username, course_id):
                     truncated_name = assignment.name[:128]+"..."
                 else:
                     truncated_name = assignment.name + " "*(125-len(assignment.name))
+                
+
+                print(assignment.name)
+
+                resitting_students = 0
+                if len(assignment.overrides) > 0:
+                    for override in assignment.overrides:
+                        resitting_students += len(override.student_ids)
+                
+                assignment_due_at = assignment.due_at
+
+                # make assignment_due_at time 12:00
+                try:
+                    assignment_due_at = assignment_due_at.replace(hour=11, minute=0, second=0, microsecond=0)
+                except:
+                    pass
+                        
+                unlock_at = iso_to_human(assignment.unlock_at)
+                due_at = iso_to_human(assignment_due_at)
+                lock_at = iso_to_human(assignment.lock_at)
                     
 
                 speed_grader_url = API_URL+"/courses/{}/gradebook/speed_grader?assignment_id={}".format(course_id, assignment.id)
                 page_html += '<tr>'
-                page_html += '<td class="tg-0pky" style="width: 100%">{}</td>'.format(truncated_name)
-                page_html += '<td class="tg-0pky"><a href="{}">Edit</a></td>'.format(assignment.html_url)
-                page_html += '<td class="tg-0pky"><a href="{}">SpeedGrader</a></td>'.format(speed_grader_url)
+                page_html += '<td class="tg-0pky" style="width:40%">{}</td>'.format(truncated_name)
+                page_html += '<td class="tg-0pky" style="width:10%">{}</td>'.format(resitting_students)
+                page_html += '<td class="tg-0pky" style="width:10%">{}</td>'.format(unlock_at)
+                page_html += '<td class="tg-0pky" style="width:10%">{}</td>'.format(due_at)
+                page_html += '<td class="tg-0pky" style="width:10%">{}</td>'.format(lock_at)
+                page_html += '<td class="tg-0pky" style="width:10%"><a href="{}/edit">Edit</a></td>'.format(assignment.html_url)
+                page_html += '<td class="tg-0pky" style="width:10%"><a href="{}">SpeedGrader</a></td>'.format(speed_grader_url)
                 page_html += '</tr>'
         page_html += "</tbody></table><br>"
 
@@ -1286,6 +1323,20 @@ def task_enroll_teachers_on_resit_course(username, course_id):
                                                                   "enrollment_state": "active"})
         except:
             print("Couldn't enroll teacher")
+
+def iso_to_datetime(dt):
+    try:    
+        return datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ")
+    except:
+        return None
+
+def iso_to_human(dt):
+    try:
+        new_dt = iso_to_datetime(dt) + timedelta(hours=1)
+        return new_dt.strftime("%d/%m/%Y %H:%M")
+    except:
+        return None
+
 
 
 

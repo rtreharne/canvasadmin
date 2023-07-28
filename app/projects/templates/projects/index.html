@@ -1,0 +1,77 @@
+{% extends "projects/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="jumbotron text-center">
+  <div class="container">
+    <h1>SoLS Project Allocation</h1>
+    <p>A web app to automate Honours project allocation in the School of Life Sciences, University of Liverpool.</p>
+    <a href="">
+      <button class="btn btn-lg btn-secondary">Submit Project (Staff)</button>
+    </a>
+    <a href="">
+    <button class="btn btn-lg btn-primary"> Submit Preferences (Students)</button>
+    </a>
+  </div>
+</div>
+<div class="container info">
+
+  <div class="alert alert-info text-center" role="alert">
+    Students can now submit their project preferences for 2022/23 (click above).
+  </div>
+
+  <hr>
+  <div class="container info">
+    <div class="row">
+      <div class="col-md-6">
+        <h3><span class="glyphicon glyphicon-info-sign"></span>  How does this web app work?</h3>
+        <p>This online webapp replaces a pre-existing manual allocation process.</p>
+        <ul>
+          <li>Students submit their preferences for <b>project area keywords</b> and <b>project types</b>.</li>
+          <li>An automated allocation algorithm works to optimise matches based on the preferences of <b>all</b> students.</li>
+          <li>Students and staff will receive automatic notifications of allocations in <b>early October 2022</b>.</li>
+          <li>Last year 70% of students were allocated their first choice of project area.</li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <h3><span class="glyphicon glyphicon-star"></span>  Improvements</h3>
+        <ul>
+          <li>Staff can now keep track of projects that they have submitted.</li>
+          <li>Staff can re-submit previous projects with any necessary edits.</li>
+          <li>Allocations will now consider only a single second year pre-requisite.</li>
+          <li>All staff will be allocated at least one project.</li>
+          <li>Unhappy with your allocated project? You can <a href="mailto:bates@liverpool.ac.uk">request a re-allocation</a>.</li>
+          </ul>
+        </ul>
+      </div>
+    </div> <!-- row -->
+  </div>
+
+  <div class="container info">
+    <div class="row">
+      <div class="col-md-6">
+        <h3><span class="glyphicon glyphicon-question-sign"></span>  Why can't I see a list of project titles?</h3>
+        <p>In pevious years students submitted a long prioritised preference list for projects based on project titles and descriptions.
+        This meant that only very few students received their first (or even second, third fourth or fifth) choice of project.
+        Now, by allowing you to prioritise based on project area keywords and project types alone it is much more likely that you will be allocated a project that will meet your preferences.</p>
+      </div>
+      <div class="col-md-6">
+        <h3><span class="glyphicon glyphicon-warning-sign"></span>  Project allocation myths.</h3>
+        <ul>
+          <li>Students with higher average grades are more likely to be allocated their first choice of project type and area.</li>
+          <li>Projects are allocated on a first come first serve basis.</li>
+          <li>Staff are able to allocate projects to students independently of this automated process.</li>
+          </ul>
+        </ul>
+      </div>
+    </div> <!-- row -->
+  </div>
+  <hr>
+  <div class="alert alert-info text-center" role="alert">
+    Last year <b>70%</b> of students got their first choice of project area or project type.
+  </div>
+
+</div>
+
+{% endblock %}
