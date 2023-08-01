@@ -118,6 +118,11 @@ class ProjectForm(ModelForm):
         return prerequisite
     """
 
+    def clean(self):
+        cleaned_data = super().clean()
+        cleaned_data['active'] = True
+        return cleaned_data
+
 
 class StudentForm(ModelForm):
 
