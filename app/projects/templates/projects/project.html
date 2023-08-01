@@ -1,0 +1,60 @@
+{% extends "projects/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+
+{% block content %}
+
+<style>
+    select[name="project_keyword"] {
+        height: 300px;
+    }
+    textarea {
+        height: 150px;
+    }
+
+    #div_id_iacd_area, #div_id_iacd_training, #div_id_iacd_techniques, #div_id_iacd_area_other, #div_id_iacd_supervisor_2 {
+        display: none;
+    }
+
+    #div_id_suggested_keyword {
+        display: none;
+    }
+
+    
+</style>
+
+<div class="jumbotron text-center">
+  <div class="container">
+    <h1>Project Details</h1>
+
+    {% if flag  %}
+      <p>Please make any desired changes to this project and click "Submit" at the bottom of the page.</p>
+    {% else %}
+    <p>Enter the details of your project(s) here.</p>
+
+     {% endif %}
+
+      {% if form.errors %}
+      <p><b>There was an error in the form below. Please check.</b></p>
+      {% endif %}
+  </div>
+</div>
+<div class="container info">
+  <div class="row">
+    <div class="offset-md-3 col-md-6">
+
+      <form action="/projects/project_details/" method="post">
+          {% csrf_token %}
+          {{ form |crispy}}
+          <a href="{% url 'projects:returning-staff' %}">
+            <button type="button" class="btn btn-lg btn-secondary">Cancel</button>
+          </a>
+          <input class="btn btn-primary btn-lg btn-submit" type="submit" value="Submit" />
+      </form>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

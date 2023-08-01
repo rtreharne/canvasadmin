@@ -157,8 +157,10 @@ class Project(models.Model):
     feedback_text = models.CharField(max_length=10000, verbose_name="Additional feedback", blank=True, default=None, null=True, help_text='Any additional feedback that can help make this web application better is greatly appreciated. (Max. 2000 chars.).')
     feedback_consent = models.BooleanField(default=False)
 
+    active = models.BooleanField(default=True)
+
     def __str__(self):
-        return self.staff.surname
+        return self.staff.username
 
 class Student(models.Model):
 

@@ -1,0 +1,118 @@
+{% extends "projects/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+
+{% block content %}
+
+<style>
+    select[name="project_keyword"] {
+        height: 300px;
+    }
+    textarea {
+        height: 150px;
+    }
+
+    #div_id_iacd_area, #div_id_iacd_training, #div_id_iacd_techniques, #div_id_iacd_area_other, #div_id_iacd_supervisor_2 {
+        display: none;
+    }
+
+    #div_id_suggested_keyword {
+        display: none;
+    }
+
+
+
+
+    .right {
+        text-align: right;
+
+    }
+
+</style>
+
+<div class="jumbotron text-center">
+  <div class="container">
+    <h1>My Projects</h1>
+    <a href="/projects">< Back</a>
+    <p>Here is a list of your past and current projects</p>
+      {% if form.errors %}
+      <p><b>There was an error in the form below. Please check.</b></p>
+      {% endif %}
+  </div>
+</div>
+<div class="container info">
+  <div class="row">
+    <div class="offset-md-3 col-md-6">
+
+      <h2>Current Projects</h2>
+        <br>
+      {% for project in projects %}
+        <!--{% if project.active %}-->
+      <div class="row">
+      <div class="col-lg-9">
+          <h4>{{ project.title }}</h4>
+          <p>{{ project.description }}</p>
+          <p class="small">
+              <b>Cognate Area:</b> {{ project.project_area }}
+          </p>
+          <p class="small">
+              <b>Keywords:</b>
+              {% for keyword in project.project_keyword.all %}{{ keyword }} | {% endfor %}
+          </p>
+
+      </div>
+      <div class="right col-lg-3">
+          <a href="/projects/edit_project/{{ project.id }}">
+              <button type="button" class="btn btn-danger">Edit</button>
+          </a>
+      </div>
+      </div>
+
+      <hr>
+        <!--{% endif %}-->
+      {% endfor %}
+
+      <form action="{% url 'projects:staff-project' %}" method="post">
+          {% csrf_token %}
+          <input class="btn btn-primary btn-lg btn-submit" type="submit" value="Submit New Project" />
+          <div class="invisible">
+          {{ form|crispy }}
+          </div>
+
+      </form>
+
+      <h2>Past Projects</h2>
+        <div class="alert alert-info text-center" role="alert">
+    You can click "Use Again" to re-submit any previous project. You WILL be able
+         to edit the project before confirming submission.
+  </div>
+
+        <br>
+      {% for project in projects %}
+        {% if not project.active %}
+      <div class="row">
+      <div class="col-lg-9">
+          <h4>{{ project.title }}</h4>
+          <p>{{ project.description }}</p>
+      </div>
+      <div class="right col-lg-3">
+          <a href="/projects/use_again/{{ project.id }}">
+              <button type="button" class="btn btn-secondary">Use Again</button>
+          </a>
+      </div>
+      </div>
+
+      <hr>
+        {% endif %}
+      {% endfor %}
+
+
+
+
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}

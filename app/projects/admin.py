@@ -19,8 +19,9 @@ def read_csv_file(filename):
     return rows
 
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "title", "project_area", "keywords", "number", "timestamp")
+    list_display = ("id", "name", "title", "project_area", "keywords", "number", "active")
     search_fields = ("id", "staff__surname")
+    actions=['make_inactive', export_as_csv_action()]
 
 
     def name(self, obj):
@@ -100,6 +101,14 @@ class ProjectAdmin(admin.ModelAdmin):
         return render(
             request, "csv_form.html", payload
         )
+    
+    @admin.action(description="Make selected inactive")
+    def make_inactive(modeladmin, request, queryset):
+        if request.user.is_staff:
+
+            for a in queryset:
+                a.active = False
+                a.save()
 
 
 class ProjectKeywordAdmin(admin.ModelAdmin):

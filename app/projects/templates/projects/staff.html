@@ -1,0 +1,39 @@
+{% extends "projects/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="jumbotron text-center">
+  <div class="container">
+    <h1>Staff Details</h1>
+    <a href="/projects">< Back</a>
+    <p>Enter your details before submitting your projects.</p>
+      {% if form.errors %}
+      <p><b>There was an error in the form below. Please check.</b></p>
+      {% endif %}
+  </div>
+</div>
+<div class="container info">
+  <div class="row">
+    <div class="offset-md-3 col-md-6">
+    <div class="alert alert-info text-center" role="alert">
+        Already filled in your details?
+        <br>
+        <b>Click <a href="{% url 'projects:returning-staff' %}">here</a> to add project details.</b>
+     </div>
+
+      <form action="" method="post">
+          {% csrf_token %}
+          {{ form|crispy }}
+                    <a href="/projects">
+            <button type="button" class="btn btn-lg btn-secondary" href="{% url 'projects:index' %}">Cancel</button>
+          </a>
+          <input class="btn btn-primary btn-lg btn-submit" type="submit" value="Submit" />
+      </form>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
