@@ -141,7 +141,7 @@ class Project(models.Model):
 
     #summer_fieldwork = models.BooleanField(default=False)
     other_comments = models.CharField(max_length=128, blank=True, default=None, null=True)
-    number = models.PositiveIntegerField(verbose_name="Number of students", help_text="I.e. how many students can do this project simultaneously? (normally max 3).", default=1, validators=[MinValueValidator(1), MaxValueValidator(10)])
+    number = models.PositiveIntegerField(verbose_name="Number of students", help_text="I.e. how many students can do this project simultaneously? (normally max 4).", default=1, validators=[MinValueValidator(1), MaxValueValidator(10)])
     allocate_to_masters = models.PositiveIntegerField(verbose_name="Allocated to Masters", default=0, editable=True)
 
     # iacd fields
