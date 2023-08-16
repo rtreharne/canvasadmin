@@ -279,6 +279,8 @@ def update_assignments(username, assignment_ids):
     assignments = Assignment.objects.filter(assignment_id__in=assignment_ids)
 
 
+
+
     # Look for submissions
     for assignment in assignments:
         try:
@@ -286,6 +288,13 @@ def update_assignments(username, assignment_ids):
             scores = [x.score for x in submissions if x.score != None]
             average_score = sum(scores)/len(scores)
             assignment.average_score = round(average_score, 1)
+
+            # Get most common "posted_at" value
+            print("UPDATING POSTED_AT")
+            posted_at = [x.posted_at for x in submissions if x.posted_at != None]
+            
+            assignment.posted_at = max(set(posted_at), key = posted_at.count)
+            
             assignment.save()
         except:
             continue

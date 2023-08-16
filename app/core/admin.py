@@ -448,7 +448,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
         #"assignment_name",
         "link",
         "due_at",
-        "has_overrides",
+        "posted_at",
         "graded_pc",
         "average_score",
         "anonymous_grading",
