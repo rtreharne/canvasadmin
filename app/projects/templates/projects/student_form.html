@@ -1,0 +1,88 @@
+{% extends "projects/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="jumbotron text-center">
+  <div class="container">
+    <a href="/" >< Back</a>
+    <h1>Student Project Preferences</h1>
+    <p>Submit your project preferences below.</p>
+
+      {% if form.errors %}
+      <p><b>There was an error in the form below. Please check.</b></p>
+      {% endif %}
+
+  </div>
+</div>
+<div class="container info">
+  <div class="row">
+    <div class="offset-md-3 col-md-6">
+      <form action="" method="post">
+          {% csrf_token %}
+          {{ form.student_id|as_crispy_field }}
+          {{ form.last_name|as_crispy_field }}
+          {{ form.first_name|as_crispy_field }}
+          {{ form.email|as_crispy_field }}
+          <!--{{ form.programme|as_crispy_field}}-->
+          {{ form.masters_pathway|as_crispy_field}}
+          {{ form.modules|as_crispy_field}}
+
+          <br>
+          {% for error in form.non_field_errors %}
+          {% if error == "Error" %}
+              <p><b><font style="color:red">You have selected the same project keyword/type more than once.
+          Please ensure that all of your project keywords/types are different.</font></b></p>
+          {% else %}
+          <p><b><font style="color:red">{{error}}</font></b></p>
+          {% endif %}
+          {% endfor %}
+
+
+          <h2>Choose your Primary Project Area</h2>
+          {{ form.area|as_crispy_field }}
+          <br>
+
+          <h2>Prioritise your project keywords:</h2>
+
+          <p>1: Highest priority, 5: Lowest priority</p>
+          {{ form.project_keyword_1|as_crispy_field }}
+          {{ form.project_keyword_2|as_crispy_field }}
+          {{ form.project_keyword_3|as_crispy_field }}
+          {{ form.project_keyword_4|as_crispy_field }}
+          {{ form.project_keyword_5|as_crispy_field }}
+          <br>
+          <h2>Prioritise your project type:</h2>
+          <p>1: Highest priority, 5: Lowest priority</p>
+          {{ form.project_type_1|as_crispy_field }}
+          {{ form.project_type_2|as_crispy_field }}
+          {{ form.project_type_3|as_crispy_field }}
+          {{ form.project_type_4|as_crispy_field }}
+          {{ form.project_type_5|as_crispy_field }}
+          <br>
+          {{ form.priority|as_crispy_field }}
+          <br>
+
+          <h2>Feedback</h2>
+
+          {{ form.feedback_rating|as_crispy_field }}
+          {{ form.feedback_text|as_crispy_field }}
+
+          <hr>
+
+          {{ form.agree|as_crispy_field }}
+
+
+          <br>
+          <a href="/">
+            <button type="button" class="btn btn-lg btn-secondary" href="{% url 'projects:index' %}">Cancel</button>
+          </a>
+          <input class="btn btn-primary btn-lg btn-submit" type="submit" value="Submit" />
+      </form>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

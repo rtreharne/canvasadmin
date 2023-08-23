@@ -214,4 +214,67 @@ def tandc(request):
     return render(request, "projects/terms_and_conditions.html")
 
 def privacy(request):
+
     return render(request, "projects/privacy_policy.html")
+
+def check_unique_set(request, key):
+
+    obj_list = [request.POST["{0}_{1}".format(key, x)] for x in range(1, 6)]
+
+    if len(set(obj_list)) < 5:
+        print(len(set(obj_list)))
+        return False
+
+    print(len(set(obj_list)))
+
+    return True
+
+def student(request):
+
+    if request.method == "POST":
+        print("GOT HERE")
+
+
+        form = StudentForm(request.POST)
+
+        print("Keywords Unique", check_unique_set(request, "project_keyword"))
+        print("Types Unique", check_unique_set(request, "project_type"))
+
+
+        if check_unique_set(request, "project_keyword") and check_unique_set(request, "project_type"):
+            print("I'm getting through the unique check")
+
+            
+
+            if form.is_valid():
+                print("form is valid!")
+                try:
+                    inst = form.save()
+                except IntegrityError:
+                    form.add_error(None, "UNIQUE")
+
+
+
+                return redirect('projects:student-thanks')
+            
+            print("form is not valid!")
+            print(form.errors)
+
+        else:
+            print("form is not valid!")
+
+            form.add_error(None, "Error")
+
+            return render(request, "projects/student_form.html", {"form": form})
+
+    else:
+
+        form = StudentForm()
+
+    return render(request, "projects/student_form.html", {"form": form})
+
+
+
+def student_thanks(request):
+
+    return render(request, "projects/student_thanks.html")

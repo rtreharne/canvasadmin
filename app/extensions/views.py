@@ -23,7 +23,7 @@ def student_id(request):
         form = StudentIdForm(request.POST)
         if form.is_valid():
             student_id = form.cleaned_data['student_id']
-            return HttpResponseRedirect('/forms/{}/'.format(student_id))
+            return HttpResponseRedirect('{}/'.format(student_id))
     else:
         form = StudentIdForm()
 
@@ -37,7 +37,7 @@ def course(request, student_id):
         form = CourseForm(request.POST, student_id=student_id)
         if form.is_valid():
             course_canvas_id = form.cleaned_data['course']
-            return HttpResponseRedirect('/forms/{}/{}/'.format(student_id, course_canvas_id))
+            return HttpResponseRedirect('/elp/{}/{}/'.format(student_id, course_canvas_id))
     else:
         form = CourseForm(student_id=student_id)
 

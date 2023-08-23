@@ -162,6 +162,8 @@ class StudentAdmin(admin.ModelAdmin):
     search_fields = ("student_id", "last_name")
     list_per_page = 500
 
+    actions= [export_as_csv_action(),]
+
 class ProjectAreaAdmin(admin.ModelAdmin):
     
     list_display = ('title',)

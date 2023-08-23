@@ -17,8 +17,8 @@ class StudentIdForm(forms.Form):
 
     def clean_student_id(self):
         student_id = self.cleaned_data['student_id']
-        if len(str(student_id)) != 9:
-            raise forms.ValidationError("Student ID must be 9 digits long")
+        #if len(str(student_id)) != 9:
+            #raise forms.ValidationError("Student ID must be 9 digits long")
         return student_id
     
     def clean(self):

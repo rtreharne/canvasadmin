@@ -180,7 +180,7 @@ class StudentForm(ModelForm):
                        ("Zoology", "Zoology")
                        )
 
-    programme = ChoiceField(widget=Select(), required=True, initial="1", choices=PROGRAMME_CHOICES,
+    programme = ChoiceField(widget=Select(), required=False, initial="1", choices=PROGRAMME_CHOICES,
                                   label="Programme",
                                   help_text="If you're a UG student then select your current programme.")
 

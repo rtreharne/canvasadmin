@@ -73,7 +73,7 @@ def send_receipt(extension, current_host):
     original_deadline = extension.original_deadline
 
     # Generate a confirmation url from the extension unique_id
-    confirmation_url = current_host + '/forms/confirm/' + "{}".format(extension.confirmation_id)
+    confirmation_url = current_host + '/elp/confirm/' + "{}".format(extension.confirmation_id)
 
     message_html = ""
     message_html += "Dear {},\n\n".format(extension.student.sortable_name.split(",")[1].strip())
