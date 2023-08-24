@@ -21,12 +21,14 @@ class ExtensionAdmin(admin.ModelAdmin):
         "extension_deadline",
         "approved",
         "approved_by",
-        "confirmed"
+        "confirmed",
+        "evidence"
     )
 
     list_filter = (
         "student",
         "assignment",
+        "extension_type",
         "approved",
         "course",
         
@@ -56,7 +58,13 @@ class ExtensionAdmin(admin.ModelAdmin):
     course.short_description = "Course"
     course.admin_order_field = "assignment_course"
     
-
+    def evidence(self, obj):
+        if obj.files:
+            return format_html('<a href="{}" target="_blank">Download</a>'.format(obj.files.url))
+        else:
+            return None
+    
+    evidence.short_description = "Evidence"
 
     def get_urls(self):
         urls = super().get_urls()

@@ -1,16 +1,12 @@
-{% extends "extensions/extensions_base.html" %}
+{% extends "extensions/elp_base.html" %}
 {% load crispy_forms_tags %}
 
 {% block content %}
 
-    <p>Select the course.</p>
-
+    <p>Enter your student ID number to begin an application for an ELP.</p>
     <form action="" method="post">
         {% csrf_token %}
         {{ form|crispy }}
         <input type="submit" value="Next" />
     </form>
-
 {% endblock content %}
-
-    

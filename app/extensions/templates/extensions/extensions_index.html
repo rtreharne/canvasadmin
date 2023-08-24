@@ -3,7 +3,7 @@
 
 {% block content %}
 
-    <p>Enter your student ID number to begin an application for an assignment extension or exemption from late penalties.</p>
+    <p>Enter your student ID number to begin an application for an assignment extension.</p>
     <form action="" method="post">
         {% csrf_token %}
         {{ form|crispy }}

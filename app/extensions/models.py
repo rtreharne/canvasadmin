@@ -53,7 +53,8 @@ class Extension(models.Model):
     original_deadline = models.DateTimeField(null=True, blank=True, editable=False)
     apply_to_subcomponents = models.BooleanField(default=False)
     reason = models.TextField(null=True, blank=True)
-    files = models.FileField(upload_to='extensions/', null=True, blank=True, verbose_name="Evidence upload")
+    files = models.FileField(upload_to='extensions/evidence', null=True, blank=True, verbose_name="Evidence upload")
+    late_ignore = models.BooleanField(default=False, verbose_name="Less than 5 minutes late?")
 
     # Create a confirmation id field using uuid
     confirmation_id = models.UUIDField(default=uuid.uuid4, editable=False, null=True, blank=True)

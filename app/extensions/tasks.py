@@ -48,7 +48,7 @@ def task_create_extension(row):
             task_create_extension(new_row)
 
 @shared_task
-def send_receipt(extension, current_host):
+def send_receipt(extension, current_host, root):
     department = extension.assignment.course.course_department
     API_URL = department.CANVAS_API_URL
     API_TOKEN = department.CANVAS_API_TOKEN
@@ -72,12 +72,17 @@ def send_receipt(extension, current_host):
     # Get the original deadline
     original_deadline = extension.original_deadline
 
+    if root == 'elp':
+        label = "exemption from late penalty (ELP)"
+    if root == 'extensions':
+        label = "extension"
+
     # Generate a confirmation url from the extension unique_id
-    confirmation_url = current_host + '/elp/confirm/' + "{}".format(extension.confirmation_id)
+    confirmation_url = current_host + '/' + "{}".format(root) + '/confirm/' + "{}".format(extension.confirmation_id)
 
     message_html = ""
     message_html += "Dear {},\n\n".format(extension.student.sortable_name.split(",")[1].strip())
-    message_html += "Your request for an excemption from late penalty (ELP) has been received and is being processed.\n\n"
+    message_html += "Your request for an {} has been received and is being processed.\n\n".format(label)
     message_html += "Course: {}\n\n".format(course_name)
     message_html += "Assignment: {}\n\n".format(assignment_name)
     message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
@@ -88,20 +93,17 @@ def send_receipt(extension, current_host):
     
     message_html += "This is an automated message. Please do not reply to this email.\n\n"
 
-    
-
-
-
-    
+        
 
     # create Canvas conversation
     try:
         conversation = canvas.create_conversation(
             recipients=[101],
-            subject="Application for ELP Confirmation",
+            subject="Application for {} confirmation".format(label),
             body=message_html,
             scope="unread",
-            context_code="course_{}".format(extension.assignment.course.course_id)
+            context_code="course_{}".format(extension.assignment.course.course_id),
+            force_new = True
         )
         return conversation
     except:
@@ -111,49 +113,62 @@ def send_receipt(extension, current_host):
 def task_apply_overrides(username, extension_pks):
     extensions = Extension.objects.filter(id__in=extension_pks)
     for extension in extensions:
-        task_apply_override(username, extension)
+        task_apply_override(username, extension.id)
 
     
 @shared_task
-def task_apply_override(username, extension):
+def task_apply_override(username, extension_pk):
     user = UserProfile.objects.get(user__username=username)
     API_URL = user.department.CANVAS_API_URL
     API_TOKEN = user.department.CANVAS_API_TOKEN
 
     canvas = Canvas(API_URL, API_TOKEN)
 
-    try:
+    #try:
 
-        # Determine if any extensions already exist for this student and assignment and delete them.
+    # Determine if any extensions already exist for this student and assignment and delete them.
 
-        existing_overrides = [x for x in canvas.get_course(extension.assignment.course.course_id).get_assignment(extension.assignment.assignment_id).get_overrides() 
-                              if extension.student.canvas_id in x.__dict__.get("student_ids", [])]
+    extension = Extension.objects.get(pk=extension_pk)
 
-        for override in existing_overrides:
-            print("deleting override")
+    existing_overrides = [x for x in canvas.get_course(extension.assignment.course.course_id).get_assignment(extension.assignment.assignment_id).get_overrides() 
+                            if extension.student.canvas_id in x.__dict__.get("student_ids", [])]
+
+    for override in existing_overrides:
+        student_ids = override.__dict__.get("student_ids", [])
+        student_ids.remove(extension.student.canvas_id)
+
+        # If this is the last student in the override then delete the override            
+        if len(student_ids) == 0:
             override.delete()
-
-        for override in existing_overrides:
-            print(override.__dict__.get("student_ids", None))
-
-        assignment = canvas.get_course(extension.assignment.course.course_id).get_assignment(extension.assignment.assignment_id)
-
         
-        assignment.create_override(
-            assignment_override={
-                "student_ids": [extension.student.canvas_id],
-                "due_at": datetime_to_json(extension.extension_deadline)
-            }
-        )
+        # Otherwise, update the override by removing the student from the student_ids list
+        else:
+            override.edit(
+                assignment_override={
+                    "student_ids": student_ids
+                }
+            )
+
+    assignment = canvas.get_course(extension.assignment.course.course_id).get_assignment(extension.assignment.assignment_id)
+
+    
+
+    
+    assignment.create_override(
+        assignment_override={
+            "student_ids": [extension.student.canvas_id],
+            "due_at": datetime_to_json(extension.extension_deadline)
+        }
+    )
 
 
-        extension.approved = True
-        extension.approved_by = user
-        extension.approved_on = datetime.now()
-        extension.save()
+    extension.approved = True
+    extension.approved_by = user
+    extension.approved_on = datetime.now()
+    extension.save()
 
-    except:
-        print("override not created!")
+    #except:
+        #print("override not created!")
 
 def datetime_to_json(dt):
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")

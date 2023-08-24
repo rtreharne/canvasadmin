@@ -10,7 +10,9 @@
     <title>Extensions</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" href="{% static 'extensions/css/extensions.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
+
 
 <body>
     <div class="container">
@@ -19,12 +21,12 @@
             </div>    
 
             <div class="col-md-8">
-                <div>
+                <div style="text-align: center">
                     <a href="/"><img src="{% static 'extensions/img/full_color_logo.png' %}" alt="Liverpool Logo" class="logo"></a>
                 </div>
                 <hr>
-                <h1>Student Application Form</h3>
-                <h3>Exemption From Late Penalty</h2>
+                <h1>Student Application Form</h1>
+                <h2>Assignment Extension</h2>
                 {% block content %}
                 {% endblock content %}
             </div>
@@ -36,7 +38,7 @@
                 <div class="col-md-2">
                 </div>    
 
-                <div class="col-md-8">
+                <div class="col-md-8" style="text-align: center;">
                     <hr>
                     <p>Canvas Lens &copy; 2023</p>
                 </div>

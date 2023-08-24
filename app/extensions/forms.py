@@ -3,6 +3,7 @@ from core.models import Student, Assignment
 from enrollments.models import Enrollment
 from extensions.models import Extension, Date
 import datetime
+from django.db.models import Q
 
 class CsvImportForm(forms.Form):
     csv_file = forms.FileField()
@@ -43,6 +44,7 @@ class CourseForm(forms.Form):
     def __init__(self, *args, **kwargs):
         student_id = kwargs.pop('student_id', None)
         super(CourseForm, self).__init__(*args, **kwargs)
+
         choices=[(enrollment.canvas_course_id, enrollment.course) for enrollment in Enrollment.objects.filter(sis_user_id__contains=student_id)]
         print("choices:", choices)
         self.fields['course'] = forms.ChoiceField(
@@ -59,51 +61,66 @@ class AssignmentForm(forms.Form):
     The course_canvas_id is in the url and is used to get all the assignments that belong to the course.
     Only list assignments if they are active.
     Use a ChoiceField to display the assignments (not a ModelChoiceField).
-    Use a ChoiceField to display the options (1 week, 2 weeks)
     """
 
     def __init__(self, *args, **kwargs):
         print("kwargs:", kwargs)
         print("args:", args)
+        
         course_canvas_id = kwargs.pop('course_canvas_id', None)
         student_id = kwargs.pop('student_id', None)
+        root = kwargs.pop('root', None)
         super(AssignmentForm, self).__init__(*args, **kwargs)
-        choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in Assignment.objects.filter(course__course_id=course_canvas_id, active=True)]
+
+        assignments = [x.id for x in Assignment.objects.filter(course__course_id=course_canvas_id, active=True) if x.due_at]
+        queryset = Assignment.objects.filter(pk__in=assignments)
+        if root=='elp':
+            choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__gte=datetime.datetime.now()-datetime.timedelta(weeks=2))]
+        if root=='extensions':
+            choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__lte=datetime.datetime.now()+datetime.timedelta(weeks=2), due_at__gte=datetime.datetime.now()-datetime.timedelta(weeks=2))]
+
         self.fields['assignment'] = forms.ChoiceField(
             choices=choices
             )            
         self.fields['reason'] = forms.CharField(
             widget=forms.Textarea
             )
+        
+        if root == 'elp':
+            self.fields['late_ignore'] = forms.BooleanField(
+                required=False,
+                label="Less than 5 minutes late?",
+                help_text="If you are less than 5 minutes late then your extension will be approved automatically and will not use one of your available extensions."
+                )
 
-        student = Student.objects.get(sis_user_id__contains=str(student_id))
+            student = Student.objects.get(sis_user_id__contains=str(student_id))
 
-        # get current datetime
-        now = datetime.datetime.now()
+            # get current datetime
+            now = datetime.datetime.now()
 
-        # get Date objects that are active and have a start date before now and a finish date after now
-        date = Date.objects.get(start__lte=now, finish__gte=now)
-        print("Dates:", date.start, date.finish, now)
+            # get Date objects that are active and have a start date before now and a finish date after now
+            date = Date.objects.get(start__lte=now, finish__gte=now)
+            print("Dates:", date.start, date.finish, now)
 
-        # get count of approved extensions for the student that are within the current date range and have no files attached
-        count = Extension.objects.filter(student=student, extension_deadline__lte=date.finish, extension_deadline__gte=date.start, approved=True, files__exact="").count()
+            # get count of approved extensions for the student that are within the current date range and have no files attached
+            count = Extension.objects.filter(student=student, extension_deadline__lte=date.finish, extension_deadline__gte=date.start, approved=True, files__exact="").count()
 
-        print("count:", count)
+            print("count:", count)
 
-        if count <2:
-            file_required = False
-            file_help_text = "If you choose not to upload evidence (e.g. a medical note/certificate) then this application will be approved automatically and you will use one of your available extensions."
-        else:
-            file_required = True
-            file_help_text = "You have already had two ELPs approved for the current period. You must upload evidence (e.g. a medical note/certificate) to support your application."
+            if count <2:
+                file_required = False
+                file_help_text = "If you choose not to upload evidence (e.g. a medical note/certificate) then this application will be approved automatically and you will use one of your available extensions."
+            else:
+                file_required = True
+                file_help_text = "You have already had two ELPs approved for the current period. You must upload evidence (e.g. a medical note/certificate) to support your application."
 
 
-        self.fields['files'] = forms.FileField(
-        required=file_required,
-        label="Evidence upload",
-        help_text=file_help_text,
+            self.fields['files'] = forms.FileField(
+            required=file_required,
+            label="Evidence upload",
+            help_text=file_help_text,
 
-        )
+            )
         
   
 
