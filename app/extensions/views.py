@@ -120,10 +120,9 @@ def assignment(request, student_id, course_canvas_id):
                         print("extension_deadline:", extension_deadline)
                         print("assignment.due_at:", assignment.due_at)
                         print("difference:", extension_deadline - assignment.due_at)
-                        if assignment.due_at - extension_deadline > datetime.timedelta(minutes=5):
+                        if submission.submitted_at - assignment.due_at > datetime.timedelta(minutes=5):
                             error_message = ''
-                            error_message += '<p class="error">You ticked the box to say that you were less than 5 minutes late. However, the difference between the original deadline and the extension deadline is greater than 5 minutes. Please un-tick the "Less than 5 minutes late?" box and try again.</p>'
-                            error_message += '<p>You need to wait at least 24 hrs before applying for an exemption after submitting.</p>'
+                            error_message += '<p class="error">You ticked the box to say that you were less than 5 minutes late. However, the difference between the original deadline and the time you submitted is greater than 5 minutes. Please un-tick the "Less than 5 minutes late?" box and try again.</p>'
         
                             return render(request, 'extensions/elp_assignment.html', {'form': form,
                                                                                     'error_message': error_message})
@@ -214,17 +213,19 @@ def confirmation(request, confirmation_id):
         # If the student has had less than two extensions approved for the current date, then apply the extension.
         if root == 'elp':
             count = Extension.objects.filter(student=extension.student, extension_deadline__lte=date.finish, extension_deadline__gte=date.start, approved=True).exclude(late_ignore=True).count()
-            if count < 2 and not extension.files:
+            print("Count:", count)
+            if count < 2:
                 extension.approved = True
                 extension.approved_on = datetime.datetime.now()
                 extension.save()
                 confirmation_message = "You have confirmed your application for an ELP. Your ELP has been automatically approved. You should see these changes reflected on Canvas shortly."
 
                 # Apply the extension to the assignment
-                task_apply_override.delay(request.user.username, extension.id)
+                task_apply_override.delay(request.user.username, extension.id, root)
                 current_host = request.get_host()
 
-                conversation = send_approved(extension, current_host, root)
+                conversation = send_approved(extension, root)
+                # sync submission
             else:
                 confirmation_message = "You have confirmed your application for an ELP. You will be notified when your application has been approved."
         elif root == 'extensions':

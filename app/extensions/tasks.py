@@ -46,6 +46,7 @@ def task_create_extension(row):
             new_row = row.copy()
             new_row["assignment_id"] = a.assignment_id
             task_create_extension(new_row)
+            
 
 @shared_task
 def send_receipt(extension, current_host, root):
@@ -131,10 +132,12 @@ def send_approved(extension, root):
 
     print("ROOT: {}".format(root))
 
-    if root == 'ELP':
+    root = root.lower()
+
+    if root == 'elp':
         label = "exemption from late penalty (ELP)"
-    if root == 'extensions':
-        label = "EXTENSION"
+    if root in ['extensions', 'extension']:
+        label = "extension"
 
     message_html = ""
     message_html += "Dear {},\n\n".format(extension.student.sortable_name.split(",")[1].strip())
