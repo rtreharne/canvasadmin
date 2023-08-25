@@ -112,7 +112,7 @@ class ExtensionAdmin(admin.ModelAdmin):
             extension_pks = [x.pk for x in queryset]
             task_apply_overrides.delay(request.user.username, extension_pks)
 
-            messages.info(request, "Your overrides are being create in Canvas. Check back later to confirm success.")
+            messages.info(request, "Your overrides are being created in Canvas. Check back later to confirm success.")
 
         
 

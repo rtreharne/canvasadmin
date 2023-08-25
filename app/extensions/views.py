@@ -5,9 +5,10 @@ from django.urls import reverse
 from core.models import Assignment, Student, Course, Submission
 from extensions.models import Extension
 import datetime
-from .tasks import send_receipt, task_apply_override
+from .tasks import send_receipt, task_apply_override, send_approved
 from .models import Extension, Date
 from canvasapi import Canvas
+from core.tasks import task_get_submission
 
 # Create your views here.
 
@@ -63,7 +64,21 @@ def assignment(request, student_id, course_canvas_id):
 
     root = list(filter(None, request.build_absolute_uri().split('/')))[-3]
     if request.method == 'POST':
-        form = AssignmentForm(request.POST, student_id=student_id, course_canvas_id=course_canvas_id, root=root)
+        form = AssignmentForm(request.POST, request.FILES, student_id=student_id, course_canvas_id=course_canvas_id, root=root)
+
+        # Handle any file uploads
+        files = request.FILES.getlist('files')
+        print(files)
+        f = None
+        if files:
+            for f in files:
+                extension = f.name.split(".")[-1]
+                print(extension)
+                if extension not in ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'zip']:
+                    error_message = ''
+                    error_message += '<p class="error">You have uploaded a file with an invalid extension. Please upload a file with one of the following extensions: pdf, doc, docx, jpg, jpeg, png.</p>'
+                    return render(request, 'extensions/elp_assignment.html', {'form': form,
+                                                                                'error_message': error_message})  
         if form.is_valid():
 
             print(form.cleaned_data)
@@ -92,19 +107,7 @@ def assignment(request, student_id, course_canvas_id):
                 pass
 
 
-            # Handle any file uploads
-            files = request.FILES.getlist('files')
-            print(files)
-            f = None
-            if files:
-                for f in files:
-                    extension = f.name.split(".")[-1]
-                    print(extension)
-                    if extension not in ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'zip']:
-                        error_message = ''
-                        error_message += '<p class="error">You have uploaded a file with an invalid extension. Please upload a file with one of the following extensions: pdf, doc, docx, jpg, jpeg, png.</p>'
-                        return render(request, 'extensions/elp_assignment.html', {'form': form,
-                                                                                  'error_message': error_message})            
+                      
             
             if root == 'elp':
                 # Check Lens for submission
@@ -129,7 +132,9 @@ def assignment(request, student_id, course_canvas_id):
                 except Submission.DoesNotExist:
                     error_message = ''
                     error_message += '<p class="error">You cannot apply for an ELP until you have made a submission via Canvas.</p>'
-                    error_message += '<p>If you have submitted then be aware that you need to wait at least 24 hours after submitting before making an application for an ELP.</p><p>If you are making an application more than 24 hours after submission and you are still seeing this message please contact <a href="mailto:SLSAssessment@liverpool.ac.uk">SLSAssessment@liverpool.ac.uk</a></p>'
+                    error_message += '<p>If you have submitted recently then please wait a few minutes and try again.</p><p>If you are making an application more than 24 hours after submission and you are still seeing this message please contact <a href="mailto:SLSAssessment@liverpool.ac.uk">SLSAssessment@liverpool.ac.uk</a></p>'
+                    task_get_submission.delay(request.user.username, assignment.assignment_id)
+
         
                     return render(request, 'extensions/elp_assignment.html', {'form': form,
                                                                                     'error_message': error_message})
@@ -217,6 +222,9 @@ def confirmation(request, confirmation_id):
 
                 # Apply the extension to the assignment
                 task_apply_override.delay(request.user.username, extension.id)
+                current_host = request.get_host()
+
+                conversation = send_approved(extension, current_host, root)
             else:
                 confirmation_message = "You have confirmed your application for an ELP. You will be notified when your application has been approved."
         elif root == 'extensions':

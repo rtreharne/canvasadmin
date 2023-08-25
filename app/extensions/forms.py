@@ -4,6 +4,7 @@ from enrollments.models import Enrollment
 from extensions.models import Extension, Date
 import datetime
 from django.db.models import Q
+from django.utils import timezone
 
 class CsvImportForm(forms.Form):
     csv_file = forms.FileField()
@@ -75,9 +76,10 @@ class AssignmentForm(forms.Form):
         assignments = [x.id for x in Assignment.objects.filter(course__course_id=course_canvas_id, active=True) if x.due_at]
         queryset = Assignment.objects.filter(pk__in=assignments)
         if root=='elp':
-            choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__gte=datetime.datetime.now()-datetime.timedelta(weeks=2))]
+            choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__lte=datetime.datetime.now()) if datetime.datetime.now() < (assignment.due_at.replace(tzinfo=None) + datetime.timedelta(weeks=2))]
+
         if root=='extensions':
-            choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__lte=datetime.datetime.now()+datetime.timedelta(weeks=2), due_at__gte=datetime.datetime.now()-datetime.timedelta(weeks=2))]
+            choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__gte=datetime.datetime.now()) if datetime.datetime.now() > (assignment.due_at.replace(tzinfo=None) - datetime.timedelta(weeks=2))]
 
         self.fields['assignment'] = forms.ChoiceField(
             choices=choices

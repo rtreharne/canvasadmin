@@ -88,7 +88,7 @@ def send_receipt(extension, current_host, root):
     message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
     message_html += "Extension deadline: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
 
-    message_html += "Please click the link below to confirm your request (you may need to coy and past the link into your browser).\n\n"
+    message_html += "Please click the link below to confirm your request (you may need to copy and past the link into your browser).\n\n"
     message_html += "http://{}\n\n".format(confirmation_url)
     
     message_html += "This is an automated message. Please do not reply to this email.\n\n"
@@ -98,8 +98,61 @@ def send_receipt(extension, current_host, root):
     # create Canvas conversation
     try:
         conversation = canvas.create_conversation(
-            recipients=[101],
+            recipients=[extension.student.canvas_id],
             subject="Application for {} confirmation".format(label),
+            body=message_html,
+            scope="unread",
+            context_code="course_{}".format(extension.assignment.course.course_id),
+            force_new = True
+        )
+        return conversation
+    except:
+        return None
+    
+@shared_task
+def send_approved(extension, root):
+    department = extension.assignment.course.course_department
+    API_URL = department.CANVAS_API_URL
+    API_TOKEN = department.CANVAS_API_TOKEN
+    
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    # Get the assignment name
+    assignment_name = extension.assignment.assignment_name
+
+    # Get the course name
+    course_name = extension.assignment.course.course_name
+
+    # Get the extension deadline
+    extension_deadline = extension.extension_deadline
+
+    # Get the original deadline
+    original_deadline = extension.original_deadline
+
+    print("ROOT: {}".format(root))
+
+    if root == 'ELP':
+        label = "exemption from late penalty (ELP)"
+    if root == 'extensions':
+        label = "EXTENSION"
+
+    message_html = ""
+    message_html += "Dear {},\n\n".format(extension.student.sortable_name.split(",")[1].strip())
+    message_html += "Your request for an {} has been approved.\n\n".format(label)
+    message_html += "Course: {}\n\n".format(course_name)
+    message_html += "Assignment: {}\n\n".format(assignment_name)
+    message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    message_html += "Extension deadline: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    
+    message_html += "This is an automated message. Please do not reply to this email.\n\n"
+
+        
+
+    # create Canvas conversation
+    try:
+        conversation = canvas.create_conversation(
+            recipients=[extension.student.canvas_id],
+            subject="Application for {} approved".format(label),
             body=message_html,
             scope="unread",
             context_code="course_{}".format(extension.assignment.course.course_id),
@@ -113,11 +166,11 @@ def send_receipt(extension, current_host, root):
 def task_apply_overrides(username, extension_pks):
     extensions = Extension.objects.filter(id__in=extension_pks)
     for extension in extensions:
-        task_apply_override(username, extension.id)
+        task_apply_override(username, extension.id, extension.extension_type)
 
     
 @shared_task
-def task_apply_override(username, extension_pk):
+def task_apply_override(username, extension_pk, root):
     user = UserProfile.objects.get(user__username=username)
     API_URL = user.department.CANVAS_API_URL
     API_TOKEN = user.department.CANVAS_API_TOKEN
@@ -166,6 +219,10 @@ def task_apply_override(username, extension_pk):
     extension.approved_by = user
     extension.approved_on = datetime.now()
     extension.save()
+
+    # Send approval email
+
+    conversation = send_approved(extension, root)
 
     #except:
         #print("override not created!")
