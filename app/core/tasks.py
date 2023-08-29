@@ -287,7 +287,10 @@ def update_assignments(username, assignment_ids):
             submissions = Submission.objects.filter(assignment=assignment)
             scores = [x.score for x in submissions if x.score != None]
             average_score = sum(scores)/len(scores)
-            assignment.average_score = round(average_score, 1)
+            if assignment.points_possible != None:
+                assignment.average_score = round(100*average_score/assignment.points_possible, 1)
+            else:
+                assignment.average_score = round(average_score, 1)
 
             # Get most common "posted_at" value
             print("UPDATING POSTED_AT")
@@ -309,6 +312,7 @@ def update_assignments(username, assignment_ids):
         "anonymous_grading": "anonymous_grading",
         "type": "submission_types",
         "has_overrides": "has_overrides",
+        "points_possible": "points_possible"
     }
 
     for a in assignments:
@@ -364,15 +368,14 @@ def update_assignments(username, assignment_ids):
                         ).save()
 
                         setattr(a, key, datetime)
-                        try:    
-                            a.pc_ungraded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
-                        except:
-                            a.pc_ungraded = 0
+                        
                         a.save()
                 else:
-                    if canvas_assignment.__dict__[value] != a.__dict__[key]:
+                    if (canvas_assignment.__dict__[value] != a.__dict__[key]) or (canvas_assignment.__dict__[value]==0):
                         if key == "needs_grading_count":
                             summary = get_submission_summary(API_URL, API_TOKEN, course_id=a.course.course_id, assignment_id=a.assignment_id)
+                            print("I'M TRYING TO UPDATE THE GRADING COUNTS")
+                            print(summary)
 
                             try:
                                 pc_graded = float("{:.2f}".format(100*summary["graded"]/(summary["graded"]+summary["ungraded"])))
@@ -392,6 +395,11 @@ def update_assignments(username, assignment_ids):
                             to_value=str(pc_graded),
                             department=user.department
                             ).save()
+
+                            try:    
+                                pc_graded = float("{:.2f}".format(100*a.graded/(a.graded+a.ungraded)))
+                            except:
+                                pc_graded = 0
 
                             a.pc_graded = pc_graded
                             a.save()
@@ -583,6 +591,11 @@ def task_get_submission(username, assignment_id):
                     except:
                         rubric=None
 
+                    if assignment.points_possible != None:
+                        score = float('{0:.1f}'.format(100*score/assignment.points_possible))
+                    
+    
+
                     try:
                         new_submission =Submission(
                         student=Student.objects.get(canvas_id=sub.user_id),
@@ -600,8 +613,7 @@ def task_get_submission(username, assignment_id):
                         comments = sub.submission_comments,
                         rubric = rubric,
                         seconds_late = sub.seconds_late,
-                        html_url="{}/courses/{}/gradebook/speed_grader?assignment_id={}&student_id={}".format(API_URL, assignment.course.course_id, assignment.assignment_id, sub.user_id)
-                        
+                        html_url="{}/courses/{}/gradebook/speed_grader?assignment_id={}&student_id={}".format(API_URL, assignment.course.course_id, assignment.assignment_id, sub.user_id) 
                         )
                         new_submission.save()
                         print("submission_added")
@@ -685,11 +697,27 @@ def update_submissions(username, submission_ids):
         except:
             rubric = None
 
+        print(app_canvas_mapp)
+
         for key, value in app_canvas_mapp.items():
 
-            if sub.__dict__[key] != canvas_submission.__dict__[value]:
+            canvas_value = canvas_submission.__dict__[value]
+        
+            if key == "score":
+                assignment = Assignment.objects.get(assignment_id=sub.assignment.assignment_id)
+                print("assignment.points_possible", assignment.points_possible)
+                print(canvas_value)
+                if assignment.points_possible != None:
+                    try:
+                        canvas_value = float('{0:.1f}'.format(100*float(canvas_value)/assignment.points_possible))
+                    except:
+                        print("couldn't convert to percentage!")
 
-                
+            print(sub.__dict__[key], canvas_value)
+
+            if sub.__dict__[key] != canvas_value:
+
+                print("updating_submission")                
 
                 SubmissionLog(
                             student=sub.student,
@@ -698,11 +726,11 @@ def update_submissions(username, submission_ids):
                             request="UPDATE",
                             field=key,
                             from_value=str(sub.__dict__[key]),
-                            to_value=str(canvas_submission.__dict__[value]),
+                            to_value=str(canvas_value),
                             department=user.department
                             ).save()
     
-                setattr(sub, key, canvas_submission.__dict__[value])
+                setattr(sub, key, canvas_value)
             sub.graded_by = graded_by
             sub.comments = comments
             sub.rubric = rubric
@@ -1044,6 +1072,7 @@ def task_get_enrollments_by_course(username, course_id):
 
             scores = [x.score for x in submissions if x.score != None]
             average_score = sum(scores)/len(scores)
+
         except:
             print("no submissions")
             average_score = None
