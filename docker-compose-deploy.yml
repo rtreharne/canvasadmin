@@ -39,6 +39,7 @@ services:
       - 80:8000
     volumes:
       - static-data:/vol/static
+    container_name: proxy
     
   # Redis
   redis:
