@@ -1004,18 +1004,27 @@ def task_award_five_min_extension(username, submission_pk):
         course = canvas.get_course(submission.course.course_id)
         assignment = course.get_assignment(submission.assignment.assignment_id)
         user = canvas.get_user(submission.student.canvas_id)
+        print(user.__dict__)
 
         # Check for existing overrides/extensions
-        overrides = [x for x in assignment.get_overrides() if user in x.__dict__.get("student_ids", [])]
+        overrides = [x for x in assignment.get_overrides() if user.id in x.__dict__.get("student_ids", [])]
 
         if len(overrides) > 0:
             print("override exists")
+            print(overrides[0].__dict__)
+            override = overrides[0]
+            override.edit(
+                assignment_override={"due_at": override.due_at_date + timedelta(minutes=5)}
+            )
+            print("override updated")
+            update_submissions(username, [submission_pk])
+            print("submission updated")
         else:
             print("no override exists")
 
 
-            #assignment.create_override(assignment_override={"student_ids": [user.id], "due_at": submission.assignment.due_at + timedelta(minutes=5)})
-            #print("override created")
+            assignment.create_override(assignment_override={"student_ids": [user.id], "due_at": submission.assignment.due_at + timedelta(minutes=5)})
+            print("override created")
 
 
     except:
