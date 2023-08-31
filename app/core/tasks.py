@@ -592,7 +592,10 @@ def task_get_submission(username, assignment_id):
                         rubric=None
 
                     if assignment.points_possible != None:
-                        score = float('{0:.1f}'.format(100*score/assignment.points_possible))
+                        try:    
+                            score = float('{0:.1f}'.format(100*score/assignment.points_possible))
+                        except:
+                            score = None
                     
     
 
