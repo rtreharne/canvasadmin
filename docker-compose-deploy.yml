@@ -55,7 +55,6 @@ services:
       context: .
     command: >
       sh -c "celery -A app worker -l INFO"
-      sh -c "celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
     volumes:
       - static-data:/vol/web/
     container_name: celery
@@ -69,6 +68,21 @@ services:
       - db
       - redis
       - app
+
+  celery-beat:
+    build:
+      context: .
+    container_name: celery-beat
+    restart: always  # Corrected placement
+    command: celery -A celery beat -l info
+    volumes:
+      - static-data:/vol/web/
+    depends_on:
+      - redis
+      - celery
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
   
 volumes:
   postgres-data:
