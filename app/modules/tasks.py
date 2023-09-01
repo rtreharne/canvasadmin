@@ -14,7 +14,7 @@ def json_to_datetime(dt):
     except:
         print("couldn't convert datetime")
         return None
-
+    
 @shared_task
 def get_modules(username, course_ids, search_string):
     user = UserProfile.objects.get(user__username=username)

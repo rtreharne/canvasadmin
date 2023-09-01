@@ -370,6 +370,8 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
 
             for submission_ids in submission_ids_batch:
                 update_submissions.delay(request.user.username, submission_ids)
+
+    
             messages.info(request, "Syncing submissions. This action is not instantaneous. Check back later.")
     
     @admin.action(description="Apply zero scores to selected")
@@ -552,7 +554,8 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
         if len(submissions) > 0:
             graded_string = ""
             if obj.pc_graded != None:
-                graded_string = obj.pc_graded
+                graded_string += str(obj.pc_graded)
+                graded_string += " (" + str(obj.graded) + "/" + str(len(submissions)) + ")" 
             url = "/admin/core/submission/?assignment_id={}".format(obj.id)
             return format_html("<a href='{}'>{}</a>".format(url, graded_string))
         return obj.pc_graded
@@ -649,6 +652,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
         if request.user.is_staff:
             assignment_ids = [x.assignment_id for x in queryset]
             add_five_minutes_to_deadlines.delay(request.user.username, assignment_ids)
+
             messages.info(request, "Adding five minutes to deadlines. This action is not instantaneous. Please check back later.")
 
     @admin.action(description="Copy to resit course")

@@ -14,6 +14,12 @@ import re
 
 logger = get_task_logger(__name__)
 
+# schedule tasks
+# get assignments
+# get submissions
+# update submissions
+# update assignments
+
 def json_to_datetime(dt):
     try:
         return datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ")
@@ -157,6 +163,33 @@ def get_submission_summary(API_URL, API_TOKEN, course_id, assignment_id):
 
     r = requests.get(url, headers= headers)
     return r.json()
+
+@shared_task
+def task_get_all_assignments(username):
+    user = UserProfile.objects.get(user__username=username)
+    courses = Course.objects.filter(course_department = user.department)
+    course_ids = [x.course_id for x in courses]
+    get_assignments_by_courses.delay(username, course_ids)
+
+@shared_task
+def get_all_submissions(username):
+    user = UserProfile.objects.get(user__username=username)
+    assignments = Assignment.objects.filter(department=user.department)
+    assignment_ids = [x.assignment_id for x in assignments]
+    task_get_submissions.delay(username, assignment_ids)
+
+@shared_task
+def update_all_assignments(username):
+    user = UserProfile.objects.get(user__username=username)
+    assignments = Assignment.objects.filter(department=user.department)
+    assignment_ids = [x.assignment_id for x in assignments]
+    update_assignments.delay(username, assignment_ids)
+
+def update_all_submissions(username):
+    user = UserProfile.objects.get(user__username=username)
+    submissions = Submission.objects.filter(department=user.department)
+    submission_ids = [x.submission_id for x in submissions]
+    update_submissions.delay(username, submission_ids)
 
 @shared_task
 def get_assignments_by_courses(username, course_ids):
@@ -1031,6 +1064,12 @@ def task_award_five_min_extension(username, submission_pk):
         print("Couldn't award five minute extensions")
 
 @shared_task
+def task_get_all_enrollments(username):
+    user = UserProfile.objects.get(user__username=username)
+    course_pks = [x.course_id for x in Course.objects.filter(course_department=user.department)]
+    task_get_enrollments_by_courses(username, course_pks)
+
+@shared_task
 def task_get_enrollments_by_courses(username, course_ids):
     for course_id in course_ids:
         task_get_enrollments_by_course(username, course_id)
@@ -1044,11 +1083,6 @@ def task_get_enrollments_by_course(username, course_id):
     canvas = Canvas(API_URL, API_TOKEN)
 
     course = canvas.get_course(course_id)
-
-    # Get engagement data
-    engagement_data = [x for x in course.get_course_level_student_summary_data()]
-
-    print(engagement_data)
 
     enrollments = [x for x in course.get_enrollments(include=["user"]) if x.type=="StudentEnrollment"]
 
