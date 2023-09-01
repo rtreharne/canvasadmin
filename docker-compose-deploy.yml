@@ -56,7 +56,6 @@ services:
     command: >
       sh -c "celery -A app worker -l INFO"
       sh -c "celery -A app beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
-
     volumes:
       - static-data:/vol/web/
     container_name: celery
