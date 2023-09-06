@@ -6,6 +6,7 @@ class Department(models.Model):
     CANVAS_API_TOKEN = models.CharField(max_length=128)
     CANVAS_API_URL = models.URLField()
     course_prefixes = models.CharField(max_length=128, null=True, blank=True, help_text="This should be a comma separated list, e.g. PHYS,MATH,CHEM")
+    label = models.CharField(max_length=8, null=True, blank=True)
 
     def __str__(self):
         return self.name

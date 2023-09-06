@@ -2,6 +2,7 @@ from django.forms import ModelForm, TextInput, ValidationError, Form, CharField,
 from .models import Staff, Project, ProjectKeyword, ProjectType, Module, Student, ProjectArea
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.safestring import mark_safe
+from accounts.models import Department
 
 COVID = (
         (False, 'No'),
@@ -26,10 +27,8 @@ class StaffForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(StaffForm, self).__init__(*args, **kwargs)
 
-    agree = BooleanField(label="I have read and agree to the <a href='/tandc'>Terms and Conditions</a> "
-                               "and <a href='/privacy'>Privacy Policy<a>",
-                         help_text="If you don't wish to agree to these then you can submit your project "
-                                   "description via email to <a href='mailto:bates@liverpool.ac.uk'>Bates@liverpool.ac.uk",
+    agree = BooleanField(label="I have read and agree to the <a href='projects/tandc'>Terms and Conditions</a> "
+                               "and <a href='/projects/privacy'>Privacy Policy<a>",
                          required=True)
 
 
@@ -64,11 +63,35 @@ class ProjectForm(ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+
+        staff = kwargs.pop('staff')
         super(ProjectForm, self).__init__(*args, **kwargs)
-        self.fields['project_keyword'].queryset = ProjectKeyword.objects.filter(verified=True).order_by('title')
-        self.fields['project_type'].queryset = ProjectType.objects.all().order_by('title')
-        self.fields['prerequisite'].queryset = Module.objects.all().order_by('code')
+        
+        # print out initial form values
+        print("setting the form up")   
+     
+        self.fields['project_area'].queryset = ProjectArea.objects.filter(school=staff.school).order_by('title')
+        self.fields['project_keyword'].queryset = ProjectKeyword.objects.filter(verified=True, school=staff.school).order_by('title')
+        self.fields['project_type'].queryset = ProjectType.objects.filter(school=staff.school).order_by('title')
+        self.fields['other_type'].queryset = ProjectType.objects.filter(school=staff.school).order_by('title')
+        self.fields['prerequisite'].queryset = Module.objects.filter(school=staff.school).order_by('code')
         self.fields['active'].widget = HiddenInput()
+        self.fields['school'].queryset = Department.objects.filter(name=staff.school.name)
+        self.fields['school'].initial = staff.school
+        self.fields['school'].widget = HiddenInput()
+        self.fields['advanced_bio_msc'].required = False
+
+        if staff.school.name == "School of Veterinary Science":
+            self.fields['title'] = CharField(widget=HiddenInput(), initial=staff.username, required=False)
+            self.fields['description'] = CharField(widget=HiddenInput(), initial=staff.username, required=False)
+            self.fields['number'] = CharField(widget=HiddenInput(), initial=1)
+
+        modules = Module.objects.filter(school=staff.school).order_by('code')
+        if not modules:
+            self.fields['prerequisite'].widget = HiddenInput()
+            self.fields['prerequisite'].required = False
+
+
 
 
     description = CharField(widget=Textarea, help_text="A couple of sentences describing the project area, rather than a specific project.  If you wish to offer projects in two or more distinct research areas that cannot be encompassed by the same description, then you will need to complete a separate version of this form for each (you will be prompted). (Max. 1000 chars.)")
@@ -102,6 +125,7 @@ class ProjectForm(ModelForm):
                    "sustainable_food_msc",
                    "mbiolsci"
                    )
+        
 
     def clean_project_keyword(self):
         project_keyword = self.cleaned_data['project_keyword']
@@ -118,28 +142,35 @@ class ProjectForm(ModelForm):
         return prerequisite
     """
 
-    def clean(self):
-        cleaned_data = super().clean()
-        cleaned_data['active'] = True
-        return cleaned_data
-
 
 class StudentForm(ModelForm):
 
+    
+
     def __init__(self, *args, **kwargs):
+
+        school = kwargs.pop('school')
+        self.school = school
+
         super(StudentForm, self).__init__(*args, **kwargs)
-        self.fields['area'].queryset = ProjectArea.objects.all().order_by('title')
-        self.fields['project_type_1'].queryset = ProjectType.objects.all().order_by('title')
-        self.fields['project_type_2'].queryset = ProjectType.objects.all().order_by('title')
-        self.fields['project_type_3'].queryset = ProjectType.objects.all().order_by('title')
-        self.fields['project_type_4'].queryset = ProjectType.objects.all().order_by('title')
-        self.fields['project_type_5'].queryset = ProjectType.objects.all().order_by('title')
-        self.fields['project_keyword_1'].queryset = ProjectKeyword.objects.all().order_by('title')
-        self.fields['project_keyword_2'].queryset = ProjectKeyword.objects.all().order_by('title')
-        self.fields['project_keyword_3'].queryset = ProjectKeyword.objects.all().order_by('title')
-        self.fields['project_keyword_4'].queryset = ProjectKeyword.objects.all().order_by('title')
-        self.fields['project_keyword_5'].queryset = ProjectKeyword.objects.all().order_by('title')
-        self.fields['modules'].queryset = Module.objects.all().order_by('code')
+        self.fields['area'].queryset = ProjectArea.objects.filter(school=school).order_by('title')
+        self.fields['project_type_1'].queryset = ProjectType.objects.filter(school=school).order_by('title')
+        self.fields['project_type_2'].queryset = ProjectType.objects.filter(school=school).order_by('title')
+        self.fields['project_type_3'].queryset = ProjectType.objects.filter(school=school).order_by('title')
+        self.fields['project_type_4'].queryset = ProjectType.objects.filter(school=school).order_by('title')
+        self.fields['project_type_5'].queryset = ProjectType.objects.filter(school=school).order_by('title')
+        self.fields['project_keyword_1'].queryset = ProjectKeyword.objects.filter(school=school).order_by('title')
+        self.fields['project_keyword_2'].queryset = ProjectKeyword.objects.filter(school=school).order_by('title')
+        self.fields['project_keyword_3'].queryset = ProjectKeyword.objects.filter(school=school).order_by('title')
+        self.fields['project_keyword_4'].queryset = ProjectKeyword.objects.filter(school=school).order_by('title')
+        self.fields['project_keyword_5'].queryset = ProjectKeyword.objects.filter(school=school).order_by('title')
+        self.fields['modules'].queryset = Module.objects.filter(school=school).order_by('code')
+
+        if school.name != "School of Life Sciences":
+            self.fields["masters_pathway"].widget = HiddenInput()
+            self.fields['programme'].widget = HiddenInput()
+            self.fields['modules'].widget = HiddenInput()
+            self.fields['modules'].required = False
 
 
 
@@ -151,10 +182,8 @@ class StudentForm(ModelForm):
     feedback_consent = BooleanField(label="Are you happy for your feedback to be anonymised and used"
                                           " in educational research studies?", required=False)
 
-    agree = BooleanField(label="I have read and agree to the <a href='/tandc'>Terms and Conditions</a> "
-                               "and <a href='/privacy'>Privacy Policy<a>",
-                         help_text="If you don't wish to agree to these then you can submit your project "
-                                   "preferences via email to <a href='mailto:bates@liverpool.ac.uk'>bates@liverpool.ac.uk",
+    agree = BooleanField(label="I have read and agree to the <a href='/projects/tandc'>Terms and Conditions</a> "
+                               "and <a href='/projects/privacy'>Privacy Policy<a>",
                          required=True)
 
     summer_fieldwork = BooleanField(label="Do you have a disability support plan we should consider in relation to working in groups?",
@@ -183,6 +212,7 @@ class StudentForm(ModelForm):
     programme = ChoiceField(widget=Select(), required=False, initial="1", choices=PROGRAMME_CHOICES,
                                   label="Programme",
                                   help_text="If you're a UG student then select your current programme.")
+
 
     #masters = ChoiceField(label="Are you a Masters student",
                            #choices=TRUE_FALSE_CHOICES,

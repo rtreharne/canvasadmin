@@ -3,6 +3,7 @@ from django.db import models
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 import datetime
+from accounts.models import Department
 
 RATING = (
         ('1', '1: Poor'),
@@ -15,6 +16,8 @@ RATING = (
 class ProjectArea(models.Model):
     title = models.CharField(max_length=128, unique=True)
     description = models.CharField(max_length=200, blank=True, default=None, null=True)
+    school = models.ForeignKey(Department, on_delete=models.PROTECT, null=True, blank=True)
+
 
     def __str__(self):
         return self.title
@@ -23,6 +26,8 @@ class ProjectKeyword(models.Model):
     title = models.CharField(max_length=128, unique=True)
     description = models.CharField(max_length=200, blank=True, default=None, null=True)
     verified = models.BooleanField(default=True)
+    school = models.ForeignKey(Department, on_delete=models.PROTECT, null=True, blank=True)
+
 
     def __str__(self):
         return self.title
@@ -30,6 +35,8 @@ class ProjectKeyword(models.Model):
 class ProjectType(models.Model):
     title = models.CharField(max_length=128, unique=True)
     description = models.CharField(max_length=200, blank=True, default=None, null=True)
+    school = models.ForeignKey(Department, on_delete=models.PROTECT, null=True, blank=True)
+
 
     def __str__(self):
         return self.title
@@ -95,6 +102,8 @@ class Staff(models.Model):
     agree = models.BooleanField(default=False)
 
     number_of_projects=models.IntegerField(default=3, validators=[MaxValueValidator(10)])
+    school = models.ForeignKey(Department, on_delete=models.PROTECT, null=True, blank=True)
+
 
 
     class Meta:
@@ -106,6 +115,8 @@ class Staff(models.Model):
 class Module(models.Model):
     code = models.CharField(max_length=7, unique=True)
     name = models.CharField(max_length=128)
+    school = models.ForeignKey(Department, on_delete=models.PROTECT, null=True, blank=True)
+
 
     def __str__(self):
         return "{0}: {1}".format(self.code, self.name)
@@ -158,6 +169,8 @@ class Project(models.Model):
     feedback_consent = models.BooleanField(default=False)
 
     active = models.BooleanField(default=True)
+    school = models.ForeignKey(Department, on_delete=models.PROTECT, null=True, blank=True)
+
 
     def __str__(self):
         return self.staff.surname
@@ -211,13 +224,14 @@ class Student(models.Model):
     feedback_text = models.CharField(max_length=200, verbose_name="Additional feedback", blank=True, default=None, null=True, help_text='Any additional feedback that can help make this web application better is greatly appreciated. (Max. 200 chars.).')
     agree = models.BooleanField(default=False)
     timestamp = models.DateField(auto_now=True, null=True, blank=True)
-
+    school = models.ForeignKey(Department, on_delete=models.PROTECT, null=True, blank=True)
     class Meta:
         unique_together = ('student_id', 'programme')
 
 
     def __str__(self):
         return self.student_id
+    
 
 
 

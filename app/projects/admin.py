@@ -112,8 +112,9 @@ class ProjectAdmin(admin.ModelAdmin):
 
 
 class ProjectKeywordAdmin(admin.ModelAdmin):
-    list_display = ("title", "verified")
+    list_display = ("title", "school", "verified")
     list_editable = ("verified",)
+    list_filter = ("school",)
 
     search_fields = ("title",)
 
@@ -166,8 +167,9 @@ class StudentAdmin(admin.ModelAdmin):
 
 class ProjectAreaAdmin(admin.ModelAdmin):
     
-    list_display = ('title',)
+    list_display = ('title', "school")
     search_fields = ("title",)
+    list_filter = ("school",)
 
     actions = [export_as_csv_action()]
 
@@ -211,8 +213,9 @@ class ProjectAreaAdmin(admin.ModelAdmin):
 
 class ModuleAdmin(admin.ModelAdmin):
 
-    list_display = ('code', 'name',)
+    list_display = ('code', 'name', 'school')
     search_fields = ("code", "name")
+    list_filter = ("school",)
 
     actions = [export_as_csv_action()]
 
@@ -257,8 +260,9 @@ class ModuleAdmin(admin.ModelAdmin):
         )
 
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ('surname', 'initials', 'email')
+    list_display = ('surname', 'initials', 'email', 'school')
     search_fields = ("surname", "initials")
+    list_filter = ("school",)
 
     actions = [export_as_csv_action()]
 
@@ -315,8 +319,9 @@ class StaffAdmin(admin.ModelAdmin):
 
 class ProjectTypeAdmin(admin.ModelAdmin):
 
-    list_display = ('title',)
+    list_display = ('title', 'school')
     search_fields = ("title",)
+    list_filter = ("school",)
 
     actions = [export_as_csv_action()]
 

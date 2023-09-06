@@ -9,6 +9,7 @@ from .forms import StaffForm, ProjectForm, ExistingStaffForm, StudentForm
 from django.contrib.auth.decorators import login_required
 from datetime import datetime, timedelta
 today = datetime.now().date() - timedelta(days=100)
+from accounts.models import Department
 
 INSTITUTE = (
         ('1', 'Ageing and Chronic Disease'),
@@ -46,6 +47,9 @@ DEPARTMENT = (
 def index(request):
     return render(request, 'projects/index.html')
 
+def SVS(request):
+    return render(request, 'projects/SVS-index.html')
+
 def returning_staff(request):
 
     if request.method == "POST":
@@ -54,6 +58,7 @@ def returning_staff(request):
         form = ExistingStaffForm(request.POST)
         if form.is_valid():
             staff = Staff.objects.get(username=form.cleaned_data['username'])
+            print("STAFF", staff)
             projects = Project.objects.filter(staff=staff).order_by("-pk")#distinct("title", "active")
 
 
@@ -73,14 +78,17 @@ def returning_staff(request):
 
 
 def staff_project(request):
+
     if request.method == "POST":
+
         form = ExistingStaffForm(request.POST)
 
         if form.is_valid():
             staff = Staff.objects.get(username=form.cleaned_data['username'])
             staff.username = staff.username.lower()
-            project_form = ProjectForm()
+            project_form = ProjectForm(staff=staff)
             project_form['staff'].initial = staff
+            print("Hello World!")
             return render(request, "projects/project.html", {'form': project_form,
                                                      'staff': staff})
 
@@ -92,14 +100,20 @@ def staff_project(request):
 
 def project_details(request):
 
-    if request.method == "POST":
+    print(request)
 
-        form = ProjectForm(request.POST)
+    if request.method == "POST":
+        staff = Staff.objects.get(pk=int(request.POST["staff"]))
+
+        form = ProjectForm(request.POST, staff=staff)
+        form['staff'].initial = staff
+
+        print("CHECKING FORM IS VALID")
+
 
         if form.is_valid():
+            print("FORM IS VALID")
             staff = form.cleaned_data["staff"]
-
-            print(form.cleaned_data)
 
             if form.cleaned_data["suggested_keyword"] != None:
 
@@ -140,10 +154,12 @@ def project_details(request):
             return render(request, "projects/staff_dash.html", {"form": existing_staff_form,
                                                        "projects": projects,
                                                        "staff": staff})
-    else:
-        form = ProjectForm()
+        else:
+            print(form.errors)
+            print(form.non_field_errors())
+            return render(request, "projects/project.html", {"form": form,
+                                                     "staff": staff})
 
-    return render(request, "projects/project.html", {'form': form})
 
 
 def use_again(request, id):
@@ -152,7 +168,7 @@ def use_again(request, id):
         project = Project.objects.get(pk=id)
     except:
         return redirect('index')
-    form = ProjectForm(instance=project)
+    form = ProjectForm(instance=project, staff=project.staff)
 
     return (render(request, "projects/project.html", {"form": form,
                                               "flag": True}))
@@ -167,7 +183,7 @@ def edit_project(request, id):
         return redirect('/projects/index')
 
     if request.method == "POST":
-        form = ProjectForm(request.POST or None, instance=project)
+        form = ProjectForm(request.POST or None, instance=project, staff=staff)
         if form.is_valid():
             form.save()
             projects = Project.objects.filter(staff=staff)
@@ -183,7 +199,7 @@ def edit_project(request, id):
                                                          "staff": staff,
                                                          "project": id})
 
-    form = ProjectForm(instance=project)
+    form = ProjectForm(instance=project, staff=staff)
 
 
     return render(request, "projects/edit_project.html", {"form": form,
@@ -229,13 +245,20 @@ def check_unique_set(request, key):
 
     return True
 
-def student(request):
+def student(request, school=None):
 
+    if school:
+        department = Department.objects.get(label=school)
+    else:
+        department = Department.objects.get(label="SOLS")
+
+    print("SCHOOL", school)
+    
     if request.method == "POST":
         print("GOT HERE")
 
 
-        form = StudentForm(request.POST)
+        form = StudentForm(request.POST, school=department)
 
         print("Keywords Unique", check_unique_set(request, "project_keyword"))
         print("Types Unique", check_unique_set(request, "project_type"))
@@ -269,7 +292,7 @@ def student(request):
 
     else:
 
-        form = StudentForm()
+        form = StudentForm(school=department)
 
     return render(request, "projects/student_form.html", {"form": form})
 

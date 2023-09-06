@@ -9,6 +9,7 @@ app_name = 'projects'
 
 urlpatterns = [
     path("", views.index, name="index"),
+    path("SVS", views.SVS, name="SVS"),
     path("staff_details/", views.staff_details, name="staff-details"),
     path("project_details/", views.project_details, name="project-details"),
     path("returning_staff/", views.returning_staff, name="returning-staff"),
@@ -19,6 +20,7 @@ urlpatterns = [
     #path("download_staff/", projects.views.download_staff, name='download-staff'),
     #path("iacd_download/", projects.views.iacd_download, name='iacd-download'),
     path("student/", views.student, name='student'),
+    path("<str:school>/student/", views.student, name='student'),
     path("tandc/", views.tandc, name='tandc'),
     path("privacy/", views.privacy, name='privacy'),
     #path("keywords_list/", projects.views.keywords_list, name='keywords-list'),

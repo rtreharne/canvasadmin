@@ -178,6 +178,7 @@ def get_all_submissions(username):
     assignment_ids = [x.assignment_id for x in assignments]
     task_get_submissions.delay(username, assignment_ids)
 
+
 @shared_task
 def update_all_assignments(username):
     user = UserProfile.objects.get(user__username=username)
