@@ -35,7 +35,8 @@ class StaffForm(ModelForm):
     class Meta:
         model = Staff
         #fields = '__all__'
-        exclude = ('institute_school', 'department', 'other_department', 'number_of_projects',)
+        fields = ('email', 'surname', 'initials', 'title', 'username', 'preferred_forename', 'location', 'other_location', 'school', 'agree',)
+        #exclude = ('institute_school', 'department', 'other_department', 'number_of_projects',)
 
     def clean_email(self):
         EMAIL_PERMISSION = ['@liv', '@lstmed']

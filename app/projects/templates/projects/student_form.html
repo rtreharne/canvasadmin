@@ -6,7 +6,7 @@
 
 <div class="jumbotron text-center">
   <div class="container">
-    <a href="/" >< Back</a>
+    <a href="javascript:history.back()" >< Back</a>
     <h1>Student Project Preferences</h1>
     <p>Submit your project preferences below.</p>
 
@@ -76,7 +76,7 @@
 
           <br>
           <a href="/">
-            <button type="button" class="btn btn-lg btn-secondary" href="{% url 'projects:index' %}">Cancel</button>
+            <button type="button" class="btn btn-lg btn-secondary" href="javascript:history.back()">Cancel</button>
           </a>
           <input class="btn btn-primary btn-lg btn-submit" type="submit" value="Submit" />
       </form>

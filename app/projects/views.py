@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.db import IntegrityError
 import os
 from itertools import chain
@@ -301,3 +301,12 @@ def student(request, school=None):
 def student_thanks(request):
 
     return render(request, "projects/student_thanks.html")
+
+def back(request):
+    url = request.META.get('HTTP_REFERER')
+
+    # remove last part of url
+    url = url.rsplit('/', 2)[0]
+    
+
+    return HttpResponseRedirect(url)

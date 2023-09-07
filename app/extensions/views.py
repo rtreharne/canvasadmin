@@ -127,7 +127,7 @@ def assignment(request, student_id, course_canvas_id):
                             return render(request, 'extensions/elp_assignment.html', {'form': form,
                                                                                     'error_message': error_message})
                     else:
-                        extension_deadline = assignment.due_at + datetime.timedelta(days=14, minutes=5)
+                        extension_deadline = submission.submitted_at + datetime.timedelta(minutes=5)
                 except Submission.DoesNotExist:
                     error_message = ''
                     error_message += '<p class="error">You cannot apply for an ELP until you have made a submission via Canvas.</p>'

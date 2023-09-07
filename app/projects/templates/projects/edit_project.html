@@ -43,7 +43,7 @@
       <form action="/projects/edit_project/{{ project }}" method="post">
           {% csrf_token %}
           {{ form |crispy}}
-        <a href="{% url 'projects:returning-staff' %}">
+        <a href="javascript:history.back()">
             <button type="button" class="btn btn-lg btn-secondary">Cancel</button>
           </a>
           <input class="btn btn-primary btn-lg btn-submit" type="submit" value="Submit" />
