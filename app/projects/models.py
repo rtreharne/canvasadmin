@@ -182,6 +182,7 @@ class Student(models.Model):
         ("2", "Project Type"),
         ("3", "It doesn't matter"),
     )
+    
     student_id = models.CharField(max_length=128, validators=[RegexValidator(regex='^\d{9}$', message='This must be a nine digit number', code='nomatch')], unique=False)
     last_name = models.CharField(max_length=28)
     first_name = models.CharField(max_length=28)

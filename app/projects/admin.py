@@ -4,6 +4,7 @@ from core.admin_actions import export_as_csv_action
 from django.urls import path
 import csv
 from core.forms import CsvImportForm
+from projects.forms import StudentForm
 from django.shortcuts import render, redirect
 from .models import ProjectKeyword, ProjectArea
 from django.db import IntegrityError
@@ -20,9 +21,10 @@ def read_csv_file(filename):
     return rows
 
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "title", "project_area", "keywords", "number", "active")
-    search_fields = ("id", "staff__surname")
+    list_display = ("id", "name", "title", "project_area", "keywords", "number", "active", "timestamp")
+    list_filter = ('staff', 'timestamp', 'active')
     actions=['make_inactive', export_project_as_csv]
+    list_editable=('number', 'active')
 
 
     def name(self, obj):
@@ -161,7 +163,8 @@ class ProjectKeywordAdmin(admin.ModelAdmin):
 
 class StudentAdmin(admin.ModelAdmin):
     list_display = ('student_id', 'last_name', 'first_name', 'email', 'timestamp')
-    search_fields = ("student_id", "last_name")
+    search_fields = ("student_id", "last_name", "first_name", "email")
+    list_filter = ("timestamp",)
     list_per_page = 500
 
     actions= [export_student_as_csv]
