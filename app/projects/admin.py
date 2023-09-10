@@ -23,7 +23,7 @@ def read_csv_file(filename):
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "title", "project_area", "keywords", "number", "active", "timestamp")
     list_filter = ('id', 'staff', 'timestamp', 'active')
-    actions=['make_inactive', export_project_as_csv]
+    actions=['make_inactive', 'make_active', export_project_as_csv]
     list_editable=('number', 'active')
 
     
