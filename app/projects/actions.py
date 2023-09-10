@@ -77,7 +77,6 @@ def export_student_as_csv(modeladmin, request, queryset):
         'last_name',
         'first_name',
         'email', 
-        'programme', 
         'masters_pathway?', 
         'prioritised_keywords', 
         'prioritised_types', 
@@ -93,7 +92,6 @@ def export_student_as_csv(modeladmin, request, queryset):
             obj.last_name,
             obj.first_name,
             obj.email,
-            StudentForm.PROGRAMME_CHOICES[0][int(obj.programme)],
             obj.masters_pathway,
             ', '.join(str(value) for value in [
                 obj.project_keyword_1,

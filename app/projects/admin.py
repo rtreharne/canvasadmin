@@ -22,9 +22,13 @@ def read_csv_file(filename):
 
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "title", "project_area", "keywords", "number", "active", "timestamp")
-    list_filter = ('staff', 'timestamp', 'active')
+    list_filter = ('id', 'staff', 'timestamp', 'active')
     actions=['make_inactive', export_project_as_csv]
     list_editable=('number', 'active')
+
+    
+
+    
 
 
     def name(self, obj):
@@ -111,6 +115,14 @@ class ProjectAdmin(admin.ModelAdmin):
 
             for a in queryset:
                 a.active = False
+                a.save()
+
+    @admin.action(description="Make selected active")
+    def make_active(modeladmin, request, queryset):
+        if request.user.is_staff:
+
+            for a in queryset:
+                a.active = True
                 a.save()
 
 
