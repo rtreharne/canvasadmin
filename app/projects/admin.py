@@ -9,6 +9,7 @@ from .models import ProjectKeyword, ProjectArea
 from django.db import IntegrityError
 from ast import literal_eval
 from django.core.exceptions import ObjectDoesNotExist
+from .actions import export_project_as_csv, export_student_as_csv
 
 def read_csv_file(filename):
     rows = []
@@ -21,7 +22,7 @@ def read_csv_file(filename):
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "title", "project_area", "keywords", "number", "active")
     search_fields = ("id", "staff__surname")
-    actions=['make_inactive', export_as_csv_action()]
+    actions=['make_inactive', export_project_as_csv]
 
 
     def name(self, obj):
@@ -163,7 +164,7 @@ class StudentAdmin(admin.ModelAdmin):
     search_fields = ("student_id", "last_name")
     list_per_page = 500
 
-    actions= [export_as_csv_action(),]
+    actions= [export_student_as_csv]
 
 class ProjectAreaAdmin(admin.ModelAdmin):
     

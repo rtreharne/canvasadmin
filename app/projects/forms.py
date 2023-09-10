@@ -150,6 +150,21 @@ class StudentForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
 
+        self.PROGRAMME_CHOICES = (("Not Applicable", "Not Applicable"),
+                       ("Anatomy and Human Biology", "Anatomy and Human Biology"),
+                       ("Biochemistry", "Biochemistry"),
+                       ("Biological Sciences", "Biological Sciences"),
+                       ("Biological and Medical Sciences", "Biological and Medical Sciences"),
+                       ("Bioveterinary Sciences", "Bioveterinary Sciences"),
+                       ("Genetics", "Genetics"),
+                       ("Human Physiology", "Human Physiology"),
+                       ("MBiolSci", "MBiolSci"),
+                       ("Microbiology", "Microbiology"),
+                       ("Pharmacology", "Pharmacology"),
+                       ("Tropical Disease Biology", "Tropical Disease Biology"),
+                       ("Zoology", "Zoology")
+                       )
+
         school = kwargs.pop('school')
         self.school = school
 
