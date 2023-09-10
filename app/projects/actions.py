@@ -28,7 +28,7 @@ def export_project_as_csv(modeladmin, request, queryset):
         'project_type', 
         'other_type',
         'prerequisite',
-        'number_of_students'
+        'number_of_students',
         'MSc?',
         'description',
     ]  # Add your field names here
