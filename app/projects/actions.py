@@ -38,7 +38,7 @@ def export_project_as_csv(modeladmin, request, queryset):
     for obj in queryset:
         row = [
             obj.id,
-            obj.staff,
+            obj.staff.username,
             obj.staff.surname,
             obj.staff.email,
             obj.project_area,
