@@ -28,6 +28,7 @@ def export_project_as_csv(modeladmin, request, queryset):
         'project_type', 
         'other_type',
         'prerequisite',
+        'number_of_students'
         'MSc?',
         'description',
     ]  # Add your field names here
@@ -48,6 +49,7 @@ def export_project_as_csv(modeladmin, request, queryset):
             obj.project_type,
             ', '.join(str(value) for value in obj.other_type.all()),
             obj.prerequisite,
+            obj.number,
             obj.advanced_bio_msc,
             obj.description,
         ]
