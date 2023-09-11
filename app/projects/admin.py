@@ -240,7 +240,7 @@ class StudentAdmin(admin.ModelAdmin):
                 try:
                     student.programme = data[student.student_id]
                     student.save()
-                except KeyError:
+                except:
                     continue
 
 
