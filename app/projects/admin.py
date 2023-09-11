@@ -383,11 +383,11 @@ class StaffAdmin(admin.ModelAdmin):
             print(data)
 
             for person in staff:
-                #try:
-                person.department = data[person.username]["department"]
-                person.save()
-                #except KeyError:
-                    #continue
+                try:
+                    person.department = data[person.username]["department"]
+                    person.save()
+                except KeyError:
+                    continue
 
             self.message_user(request, "Your csv file has been imported. Staff will be updated. Keep refreshing.")
             return redirect("..")
