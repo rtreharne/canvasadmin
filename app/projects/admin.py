@@ -181,6 +181,55 @@ class StudentAdmin(admin.ModelAdmin):
 
     actions= [export_student_as_csv]
 
+    change_list_template = "projects/student_changelist.html"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path('import-csv/', self.import_csv),
+        ]
+        return my_urls + urls
+
+    def import_csv(self, request):
+        if request.method == "POST":
+            file = request.FILES["csv_file"]
+
+            decoded_file = file.read().decode('utf-8').splitlines()
+
+            # read file and skip header row
+            reader = csv.reader(decoded_file)
+
+            # create dictionary of data with student_id as key
+            data = {}
+            for row in reader:
+                data[row[0]] = row[1]
+
+            print(data)
+
+            students = Student.objects.all()
+
+            for student in students:
+                try:
+                    student.programme = data[student.student_id]
+                    student.save()
+                except KeyError:
+                    continue
+
+
+
+
+
+
+
+            
+            self.message_user(request, "Your csv file has been imported. Students will be updated. Keep refreshing.")
+            return redirect("..")
+        form = CsvImportForm()
+        payload = {"form": form}
+        return render(
+            request, "csv_form.html", payload
+        )
+
 class ProjectAreaAdmin(admin.ModelAdmin):
     
     list_display = ('title', "school")

@@ -1,8 +1,10 @@
-from django.forms import ModelForm, TextInput, ValidationError, Form, CharField, Textarea, BooleanField, ChoiceField, Select, HiddenInput
+from django.forms import FileField, ModelForm, TextInput, ValidationError, Form, CharField, Textarea, BooleanField, ChoiceField, Select, HiddenInput
 from .models import Staff, Project, ProjectKeyword, ProjectType, Module, Student, ProjectArea
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.safestring import mark_safe
 from accounts.models import Department
+from django.db.models import Q
+
 
 COVID = (
         (False, 'No'),
@@ -271,3 +273,6 @@ class StudentForm(ModelForm):
             raise ValidationError("Please select two secondary types or less.")
         return other_type
 """
+
+class CsvImportForm(Form):
+    csv_file = FileField()
