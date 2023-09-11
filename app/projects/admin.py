@@ -11,6 +11,20 @@ from django.db import IntegrityError
 from ast import literal_eval
 from django.core.exceptions import ObjectDoesNotExist
 from .actions import export_project_as_csv, export_student_as_csv
+from django.contrib.auth.models import User
+from accounts.models import UserProfile
+
+class UsernameFilter(admin.SimpleListFilter):
+    title = ('Username')
+    parameter_name = 'custom_filter'
+
+    def lookups(self, request, model_admin):
+        # Get unique values for the custom filter based on the current user
+        return Staff.objects.filter(school=UserProfile.objects.get(user=request.user).department).values_list('username', 'username').distinct()
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(username=self.value())
 
 def read_csv_file(filename):
     rows = []
@@ -21,15 +35,26 @@ def read_csv_file(filename):
     return rows
 
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "title", "project_area", "keywords", "number", "active", "timestamp")
-    list_filter = ('id', 'staff', 'timestamp', 'active')
+    list_display = ("id", "username", "name", "title", "project_area", "keywords", "number", "active", "timestamp")
+    list_filter = (UsernameFilter,
+                    'timestamp', 
+                    'active')
+    search_fields = ('staff__username', "staff__surname",)
     actions=['make_inactive', 'make_active', export_project_as_csv]
     list_editable=('number', 'active')
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        profile = UserProfile.objects.get(user=request.user)
+        department = profile.department
     
 
-    
+        return qs.filter(school=department)
 
+    def username(self, obj):
+        return obj.staff.username
+    
+    username.admin_order_field = 'staff__username'
 
     def name(self, obj):
         return ("%s, %s" % (obj.staff.surname, obj.staff.initials))
@@ -216,12 +241,6 @@ class StudentAdmin(admin.ModelAdmin):
                     continue
 
 
-
-
-
-
-
-            
             self.message_user(request, "Your csv file has been imported. Students will be updated. Keep refreshing.")
             return redirect("..")
         form = CsvImportForm()
@@ -325,9 +344,11 @@ class ModuleAdmin(admin.ModelAdmin):
         )
 
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ('surname', 'initials', 'email', 'school')
+    list_display = ('surname', 'initials', 'username', 'department', 'number_of_projects')
     search_fields = ("surname", "initials")
-    list_filter = ("school",)
+    list_filter = ("school","department", "location", "other_location")
+
+    list_editable = ('number_of_projects', )
 
     actions = [export_as_csv_action()]
 
@@ -337,8 +358,45 @@ class StaffAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         my_urls = [
             path('import-csv/', self.import_csv),
+            path('update-csv/', self.update_csv),
         ]
         return my_urls + urls
+
+    def update_csv(self, request):
+        if request.method == "POST":
+            file = request.FILES["csv_file"]
+
+            decoded_file = file.read().decode('utf-8').splitlines()
+
+            # read file and skip header row
+            reader = csv.reader(decoded_file)
+
+            # create dictionary of data with username as key
+            # the first column is called "search_string", the second is called "username", the third is called "department"
+            data = {}
+            for row in reader:
+                data[row[1]] = {"department": row[2]}
+
+            # update staff department using data
+            staff = Staff.objects.all()
+
+            print(data)
+
+            for person in staff:
+                #try:
+                person.department = data[person.username]["department"]
+                person.save()
+                #except KeyError:
+                    #continue
+
+            self.message_user(request, "Your csv file has been imported. Staff will be updated. Keep refreshing.")
+            return redirect("..")
+        
+        form = CsvImportForm()
+        payload = {"form": form}
+        return render(
+            request, "csv_form.html", payload
+        )
     
     def import_csv(self, request):
         if request.method == "POST":

@@ -95,7 +95,7 @@ class Staff(models.Model):
     username = models.CharField(max_length=10, unique=True, help_text="Standard university login name (MWS, Canvas) - required for setting up Canvas groups etc")
     preferred_forename = models.CharField(max_length=25, blank=True, null=True, default=None)
     institute_school = models.CharField(verbose_name="Institute/School", max_length=128, choices=INSTITUTE, blank=True, default=None, null=True)
-    department = models.CharField(max_length=128, choices=DEPARTMENT, blank=True, default=None, null=True)
+    department = models.CharField(max_length=128, blank=True, default=None, null=True)
     other_department = models.CharField(verbose_name="Other", help_text="If your department is not listed then please enter it here.", max_length=28, blank=True, default=None, null=True)
     location = models.CharField(max_length=128, choices=LOCATION)
     other_location = models.CharField(verbose_name="Other", help_text="If your location is not listed then please enter it here.", max_length=28, blank=True, default=None, null=True)
