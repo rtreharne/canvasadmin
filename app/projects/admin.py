@@ -35,7 +35,7 @@ def read_csv_file(filename):
     return rows
 
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ("id", "username", "name", "title", "project_area", "keywords", "number", "active", "timestamp")
+    list_display = ("id", "username", "name", "department", "project_area", "keywords", "number", "active", "timestamp")
     list_filter = (UsernameFilter,
                     'timestamp', 
                     'active')
@@ -53,6 +53,9 @@ class ProjectAdmin(admin.ModelAdmin):
 
     def username(self, obj):
         return obj.staff.username
+    
+    def department(self, obj):
+        return obj.staff.department
     
     username.admin_order_field = 'staff__username'
 
