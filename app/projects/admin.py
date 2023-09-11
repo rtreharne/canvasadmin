@@ -20,11 +20,11 @@ class UsernameFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         # Get unique values for the custom filter based on the current user
-        return Staff.objects.filter(school=UserProfile.objects.get(user=request.user).department).values_list('username', 'username').distinct()
+        return Staff.objects.filter(school=UserProfile.objects.get(user=request.user).department).values_list('username', 'username').distinct().order_by('username')
 
     def queryset(self, request, queryset):
         if self.value():
-            return queryset.filter(username=self.value())
+            return queryset.filter(staff__username=self.value())
 
 def read_csv_file(filename):
     rows = []
