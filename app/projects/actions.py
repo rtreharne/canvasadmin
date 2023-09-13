@@ -45,7 +45,7 @@ def export_project_as_csv(modeladmin, request, queryset):
             obj.staff.surname,
             obj.staff.email,
             obj.staff.department,
-            obj.location,
+            obj.staff.location,
             obj.project_area,
             obj.title,
             obj.project_area,
