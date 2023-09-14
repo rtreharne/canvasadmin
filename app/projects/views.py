@@ -115,36 +115,12 @@ def project_details(request):
             print("FORM IS VALID")
             staff = form.cleaned_data["staff"]
 
-            if form.cleaned_data["suggested_keyword"] != None:
-
-                inst = form.save(commit=False)
-
-                keywords_string = form.cleaned_data["suggested_keyword"].lower()
-                keywords_list = keywords_string.split(',')
-                keywords_list = [x.strip().capitalize() for x in keywords_list]
-                for word in keywords_list:
-                    if word != "":
-                        try:
-                            ProjectKeyword.objects.create(
-                                title=word,
-                                verified=False
-                            )
-                        except:
-                            continue
-
-
-                keyword_objs = ProjectKeyword.objects.filter(title__in=keywords_list)
-                print(keyword_objs)
-                print(form.cleaned_data["project_keyword"])
-
-                project_keyword = form.cleaned_data["project_keyword"]#.union(keyword_objs)
-                #project_keyword = form.cleaned_data["project_keyword"]
-
-                inst.save()
-                inst.project_keyword.add(*project_keyword)
-                inst.project_keyword.add(*keyword_objs)
-            else:
-                form.save()
+           
+            
+            inst = form.save(commit=False)
+            inst.active = True
+            print("SAVING")
+            inst.save()
 
             projects = Project.objects.filter(staff=staff)
             staff = Staff.objects.get(id=staff.id)
@@ -183,6 +159,7 @@ def edit_project(request, id):
         return redirect('/projects/index')
 
     if request.method == "POST":
+        print("I'M POSTING")
         form = ProjectForm(request.POST or None, instance=project, staff=staff)
         if form.is_valid():
             form.save()
