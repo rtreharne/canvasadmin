@@ -87,7 +87,7 @@ def send_receipt(extension, current_host, root):
     message_html += "Course: {}\n\n".format(course_name)
     message_html += "Assignment: {}\n\n".format(assignment_name)
     message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-    message_html += "Extension deadline: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
 
     message_html += "Please click the link below to confirm your request (you may need to copy and past the link into your browser).\n\n"
     message_html += "http://{}\n\n".format(confirmation_url)
@@ -145,7 +145,10 @@ def send_approved(extension, root):
     message_html += "Course: {}\n\n".format(course_name)
     message_html += "Assignment: {}\n\n".format(assignment_name)
     message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-    message_html += "Extension deadline: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    if label == 'extension':
+        message_html += "Extension deadline: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    else:
+        message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
     
     message_html += "This is an automated message. Please do not reply to this email.\n\n"
 

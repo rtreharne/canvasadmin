@@ -92,7 +92,7 @@ class AssignmentForm(forms.Form):
             self.fields['late_ignore'] = forms.BooleanField(
                 required=False,
                 label="Less than 5 minutes late?",
-                help_text="If you are less than 5 minutes late then your extension will be approved automatically and will not use one of your available extensions."
+                help_text="Please indicate here if you submitted your assignment less than 5 minutes late. You are not required to provide evidence for such applications."
                 )
 
             student = Student.objects.get(sis_user_id__contains=str(student_id))
@@ -111,7 +111,7 @@ class AssignmentForm(forms.Form):
 
             if count <2:
                 file_required = False
-                file_help_text = "If you choose not to upload evidence (e.g. a medical note/certificate) then this application will be approved automatically and you will use one of your available extensions."
+                file_help_text = "If you choose not to upload evidence (e.g. medical note/certificate) then this application will be considered as one of two self-certified ELPs."
             else:
                 file_required = True
                 file_help_text = "You have already had two ELPs approved for the current period. You must upload evidence (e.g. a medical note/certificate) to support your application."

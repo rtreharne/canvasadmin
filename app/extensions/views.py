@@ -130,7 +130,7 @@ def assignment(request, student_id, course_canvas_id):
                         extension_deadline = submission.submitted_at + datetime.timedelta(minutes=5)
                 except Submission.DoesNotExist:
                     error_message = ''
-                    error_message += '<p class="error">You cannot apply for an ELP until you have made a submission via Canvas.</p>'
+                    error_message += '<p class="error">You cannot apply for an ELP until you have submitted this assignment via Canvas.</p>'
                     error_message += '<p>If you have submitted recently then please wait a few minutes and try again.</p><p>If you are making an application more than 24 hours after submission and you are still seeing this message please contact <a href="mailto:SLSAssessment@liverpool.ac.uk">SLSAssessment@liverpool.ac.uk</a></p>'
                     task_get_submission.delay(request.user.username, assignment.assignment_id)
 
@@ -218,7 +218,7 @@ def confirmation(request, confirmation_id):
                 extension.approved = True
                 extension.approved_on = datetime.datetime.now()
                 extension.save()
-                confirmation_message = "You have confirmed your application for an ELP. Your ELP has been automatically approved. You should see these changes reflected on Canvas shortly."
+                confirmation_message = "You have confirmed your application for an ELP. Your ELP will be approved shortly. Following approval your assignment will no longer be subject to a late penatly."
 
                 # Apply the extension to the assignment
                 task_apply_override.delay(request.user.username, extension.id, root)
