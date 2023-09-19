@@ -227,9 +227,9 @@ def confirmation(request, confirmation_id):
                 conversation = send_approved(extension, root)
                 # sync submission
             else:
-                confirmation_message = "You have confirmed your application for an ELP. You will be notified when your application has been approved."
+                confirmation_message = "You have confirmed your application for an ELP. You will be notified of the outcome of your application."
         elif root == 'extensions':
-            confirmation_message = "You have confirmed your application for an extension. You will be notified when your application has been approved."
+            confirmation_message = "You have confirmed your application for an extension. You will be notified of the outcome of your application."
     if root == 'elp':
         return render(request, 'extensions/elp_student_confirmation.html', {'extension': extension,
                                                                        'confirmation_message': confirmation_message})

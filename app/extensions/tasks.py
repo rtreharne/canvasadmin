@@ -89,7 +89,7 @@ def send_receipt(extension, current_host, root):
     message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
     message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
 
-    message_html += "Please click the link below to confirm your request (you may need to copy and past the link into your browser).\n\n"
+    message_html += "Please click the link below to confirm your request (you may need to copy and paste the link into your browser).\n\n"
     message_html += "http://{}\n\n".format(confirmation_url)
     
     message_html += "This is an automated message. Please do not reply to this email.\n\n"

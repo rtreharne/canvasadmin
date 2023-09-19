@@ -114,7 +114,7 @@ class AssignmentForm(forms.Form):
                 file_help_text = "If you choose not to upload evidence (e.g. medical note/certificate) then this application will be considered as one of two self-certified ELPs."
             else:
                 file_required = True
-                file_help_text = "You have already had two ELPs approved for the current period. You must upload evidence (e.g. a medical note/certificate) to support your application."
+                file_help_text = "You have already utilised two self-certified applications for the current period. You must upload evidence (e.g. a medical note/certificate) to support your application."
 
 
             self.fields['files'] = forms.FileField(
