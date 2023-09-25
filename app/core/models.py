@@ -38,6 +38,8 @@ class Assignment(models.Model):
     type = models.CharField(max_length=128, null=True, blank=True)
     has_overrides = models.BooleanField(default=False, verbose_name="Overrides")
     posted_at = models.DateTimeField(null=True, blank=True)
+    rollover_to_course = models.ForeignKey(Course, null=True, blank=True, on_delete=models.PROTECT, related_name="rollover_to_course")
+    previous_term_assignment = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
 
     def __str__(self):
         return self.assignment_name
