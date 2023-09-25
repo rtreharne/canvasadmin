@@ -61,6 +61,7 @@ class CourseAdmin(admin.ModelAdmin):
 
             data = []
             [data.extend(x) for x in reader]
+            print(data)
 
             get_courses.delay(request.user.username, courses=data)
 

@@ -130,6 +130,7 @@ def get_courses(username, term=None, courses=None):
                         ).save()
                 print(course.course_code, "saved!")
             except:
+                print("There was an issue")
                 continue
         return "Courses Added!"
 
@@ -337,7 +338,7 @@ def update_assignments(username, assignment_ids):
             continue
 
     app_canvas_mapp = {
-        #"assignment_name": "name",
+        "assignment_name": "name",
         "unlock_at": "unlock_at",
         "lock_at": "lock_at",
         #"due_at": "due_at",
