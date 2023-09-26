@@ -51,7 +51,9 @@ class AssignmentDatesUpdateForm(forms.Form):
         )
     )
 
-    only_visible_to_overrides = forms.BooleanField(initial=False)
+    only_visible_to_overrides = forms.BooleanField(initial=False, required=False)
+
+
 
     
 

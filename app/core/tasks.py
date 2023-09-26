@@ -343,7 +343,7 @@ def update_assignments(username, assignment_ids):
         "assignment_name": "name",
         "unlock_at": "unlock_at",
         "lock_at": "lock_at",
-        #"due_at": "due_at",
+        "due_at": "due_at",
         "needs_grading_count": "needs_grading_count",
         "published": "published",
         "anonymous_grading": "anonymous_grading",
@@ -363,23 +363,9 @@ def update_assignments(username, assignment_ids):
 
         if assignment_found:
             for key, value in app_canvas_mapp.items(): 
-                    
-                if key == "due_at":
-                    print("updating due_at")
-                    if canvas_assignment.has_overrides:
-                        print("has overrides")
-                        assignment = [x for x in canvas.get_course(a.course.course_id).get_assignments(include=["all_dates"]) if x.id == a.assignment_id][0]
-                        dates = assignment.all_dates
-                        for date in dates:
-                            print(date.keys())
-                            if "base" in date.keys():
-                                datetime = is_datetime(date["due_at"])
-                else:
-
-                    datetime = is_datetime(canvas_assignment.__dict__.get(key, None))
-
                 
 
+                datetime = is_datetime(canvas_assignment.__dict__.get(key, None))
                     
                 if datetime:
                     if len(str(a.__dict__[key])) <1:
