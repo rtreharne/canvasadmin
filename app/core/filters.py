@@ -24,6 +24,7 @@ class AssignmentDateFilter(admin.SimpleListFilter):
         except:
             return ()
 
+
     def queryset(self, request, queryset):
         
         value = self.value()
@@ -39,6 +40,7 @@ class AssignmentDateFilter(admin.SimpleListFilter):
                 return queryset.filter(due_at__isnull=True)
 
         return queryset
+    
     
 class SubmissionDateFilter(admin.SimpleListFilter):
     title = 'Deadline Filter'
@@ -59,6 +61,30 @@ class SubmissionDateFilter(admin.SimpleListFilter):
             date_obj = Date.objects.get(label=value)
 
             return queryset.filter(assignment__due_at__gte=date_obj.start, assignment__due_at__lte=date_obj.finish)
+
+        return queryset
+    
+class PreviousDateFilter(admin.SimpleListFilter):
+    title = 'Previous Deadline Filter'
+    parameter_name = 'previous_term_assignment__due_at'
+
+    def lookups(self, request, model_admin):
+        try:
+            filter_tuple = ((x, x) for x in Date.objects.all().order_by('label'))
+            return filter_tuple
+        except:
+            return ()
+
+    def queryset(self, request, queryset):
+        
+        value = self.value()
+
+        print("value: ", value)
+
+        if value != None:
+            date_obj = Date.objects.get(label=value)
+
+            return queryset.filter(previous_term_assignment__due_at__gte=date_obj.start, previous_term_assignment__due_at__lte=date_obj.finish)
 
         return queryset
         

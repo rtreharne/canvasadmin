@@ -3,19 +3,20 @@ from django.utils.html import format_html
 from accounts.models import User, UserProfile
 from canvasapi import Canvas
 from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
-from .tasks import anonymise_assignments, deanonymise_assignments, task_get_submissions, update_submissions, get_assignments_by_courses, add_five_minutes_to_deadlines, task_apply_cat_bs, task_apply_cat_cs, task_get_enrollments_by_courses
+from .tasks import *
 from django.contrib.admin import DateFieldListFilter
 from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course, task_assign_resit_course_to_courses, task_make_only_visible_to_overrides, task_create_assignment_summary, task_enroll_teachers_on_resit_course
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
-from .filters import AssignmentDateFilter, SubmissionDateFilter
+from .filters import AssignmentDateFilter, SubmissionDateFilter, PreviousDateFilter
 from datetime import datetime
 from .forms import CsvImportForm, AssignmentDatesUpdateForm, AssignResitForm
 from django.urls import path
 import csv
 from django.shortcuts import render, redirect
 from admin_confirm.admin import AdminConfirmMixin, confirm_action
+from .helpers import *
 
 class StaffAdmin(admin.ModelAdmin):
     list_display = ("name", "items_graded", "courses_graded_in",)
@@ -458,6 +459,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
         "published",
         "active",
         "quiz",
+        "previous_deadline",
     )
 
     #list_filter = ('')
@@ -473,8 +475,12 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
                "update_assignment_deadlines", 
                "make_inactive",
                "make_active",
+               "duplicate_for_resit",
                "copy_to_resit_course",
-               "make_only_visible_to_overrides"
+               "make_only_visible_to_overrides",
+               "assign_to_next_term",
+               "copy_to_next_term",
+               "find_last_term_assignment",
                ]
 
     list_editable = ('active', 'quiz')
@@ -490,7 +496,8 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
                    'published',
                    AssignmentDateFilter,
                    'has_overrides',
-                   'anonymous_grading')
+                   'anonymous_grading',
+                   PreviousDateFilter)
     
     def get_urls(self):
         urls = super().get_urls()
@@ -536,6 +543,12 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
         user_profile = UserProfile.objects.get(user=request.user)
         queryset = Assignment.objects.filter(course__course_department=user_profile.department)
         return queryset
+    
+    def previous_deadline(self, obj):
+        try:
+            return obj.previous_term_assignment.due_at
+        except:
+            return None
 
     def assignment_link(self, obj):
         return format_html('<a href="{}" target="_blank">{} ...</a> <a href="{}/change">[edit]</a>'.format(obj.url, obj.assignment_name[:25], obj.id))
@@ -656,6 +669,15 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
 
             messages.info(request, "Adding five minutes to deadlines. This action is not instantaneous. Please check back later.")
 
+    @admin.action(description="Duplicate for resit")
+    @confirm_action
+    def duplicate_for_resit(modeladmin, request, queryset):
+        if request.user.is_staff:
+            assignment_ids = [x.assignment_id for x in queryset]
+            for assignment_id in assignment_ids:
+                task_duplicate_for_resit.delay(request.user.username, assignment_id)
+            messages.info(request, "Duplicating for resit. This action is not instantaneous. Please check back later.")
+    
     @admin.action(description="Copy to resit course")
     @confirm_action
     def copy_to_resit_course(modeladmin, request, queryset):
@@ -673,6 +695,50 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
             for assignment_id in assignment_ids:
                 task_make_only_visible_to_overrides.delay(request.user.username, assignment_id)
             messages.info(request, "Making assignments only visible to overrides. This action is not instantaneous. Please check back later.")
+
+    @admin.action(description="Assign to next term course")
+    @confirm_action
+    def assign_to_next_term(modeladmin, request, queryset):
+        if request.user.is_staff:
+            assignment_ids = [x.assignment_id for x in queryset]
+            for assignment_id in assignment_ids:
+                task_assign_to_next_term.delay(request.user.username, assignment_id)
+            messages.info(request, "Assigning to next term course. This action is not instantaneous. Please check back later.")
+
+    @admin.action(description="Copy to next term course")
+    @confirm_action
+    def copy_to_next_term(modeladmin, request, queryset):
+        if request.user.is_staff:
+            assignment_ids = [x.assignment_id for x in queryset]
+            for assignment_id in assignment_ids:
+                task_copy_to_next_term_course.delay(request.user.username, assignment_id)
+            messages.info(request, "Copying to next term course. This action is not instantaneous. Please check back later.")
+
+    @admin.action(description="Find last term assignment")
+    @confirm_action
+    def find_last_term_assignment(modeladmin, request, queryset):
+        if request.user.is_staff:
+            for assignment in queryset:
+                try:
+                    term = find_first_match(term_pattern, assignment.course.course_code)
+                    print(term)
+                    last_term = int(term) - 101
+                    print(last_term)
+                    last_course = Course.objects.get(course_code = assignment.course.course_code.replace(term, str(last_term)))
+                    print(last_course)
+
+                    label = find_first_match(assignment_pattern, assignment.assignment_name)
+                    print("label", label)
+                
+                    last_term_assignment = Assignment.objects.filter(course=last_course, assignment_name__contains=label)[0]
+                    assignment.previous_term_assignment = last_term_assignment
+                    assignment.save()
+                except:
+                    print("No last term assignment found")
+                    last_term_assignment = None
+
+            
+
 
 
 

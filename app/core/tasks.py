@@ -11,6 +11,8 @@ from accounts.models import Department
 from celery.utils.log import get_task_logger
 import time
 import re
+from .helpers import *
+
 
 logger = get_task_logger(__name__)
 
@@ -1422,9 +1424,207 @@ def iso_to_human(dt):
         return new_dt.strftime("%d/%m/%Y %H:%M")
     except:
         return None
+    
+@shared_task
+def task_assign_to_next_term(username, assignment_id):
+    user = UserProfile.objects.get(user__username=username)
+    assignment = Assignment.objects.get(assignment_id=assignment_id)
+
+    if assignment.rollover_to_course is not None:
+        return f"{assignment.assignment_name}: Assignment already assigned to next term"
+    
+    try:
+        course = assignment.course
+        term = int(find_first_match(term_pattern, course.course_code))
+        course_code = find_first_match(course_pattern, assignment.assignment_name)
+        next_term = term + 101
+        next_course_string = course_code + '-' + str(next_term)
+        next_course = Course.objects.get(course_code=next_course_string)
+        assignment.rollover_to_course = next_course
+        assignment.save()
+        return f"{assignment.assignment_name}: Assignment assigned to next term"
+    except:
+        return f"{assignment.assignment_name}: Couldn't assign assignment to next term"
+  
+
+    return "Assignment updated"
+
+@shared_task
+def task_copy_to_next_term_course(username, assignment_id):
+    print("task_copy_to_next_term_course")
+
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    # Create a canvas handle
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    # Get the assignment object from Lens
+    assignment = Assignment.objects.get(assignment_id=assignment_id)    
+
+    term = int(find_first_match(term_pattern, assignment.course.course_code))
+    next_term = term + 101
+
+    course_code = find_first_match(course_pattern, assignment.assignment_name)
+    course_code = course_code + '-' + str(term)
+    next_course_code = course_code.replace(str(term), str(next_term))
+
+    print("next_term_course:", next_course_code)
+
+    # Get course object from Canvas
+    course = canvas.get_course(assignment.course.course_id)
+
+    # Get the original assignment object from Canvas
+    old_assignment = canvas.get_course(course.id).get_assignment(assignment_id)
+
+    next_course = canvas.get_course(next_course_code, use_sis_id=True)
+
+    next_course_assignments = [x.name for x in next_course.get_assignments()]
+
+    # remove "RESIT " from assignment name
+    new_title = assignment.assignment_name.replace("RESIT", "").strip()
+
+    if new_title not in next_course_assignments:
 
 
 
+        next_course.create_content_migration(
+            migration_type="course_copy_importer",
+            settings={"source_course_id": str(course.id)},
+            select={"assignments": [assignment_id]}
+        )
+  
+
+        start = time.time()
+
+        """
+        Create a while loop that runs for 20 minutes. If the migration is complete, break the loop. If not, wait 30 seconds and try again.
+        """
+        while True:
+            try:
+                new_assignment = [x for x in next_course.get_assignments() if x.name == old_assignment.name][0]
+                compare_assignments = [x.name for x in next_course.get_assignments()]
+                if new_title in compare_assignments:
+                    new_assignment.delete()
+                    print("Assignment already exists in resit course")
+                print("Old Assignment Name", old_assignment.name, "Assignment Lens Name", assignment.assignment_name)
+
+                new_assignment.edit(
+                    assignment={"name": new_title,
+                                "unlock_at": "",
+                                "lock_at": "",
+                                "due_at": "",
+                                "description": "",
+                                "only_visible_to_overrides": True,
+                                "published": False,
+                                "anonymous_grading": True}
+                                #"assignment_group_id": assignment_group.id},
+                )
+
+                # get assignment group
+                # assignment_group = get_assignment_group(next_course, new_assignment, API_URL, API_TOKEN)
+
+            except:
+                print("no dice")
+
+                if time.time() - start > 300:
+                    break
+                else:
+                    time.sleep(30)
+                    continue
+
+            break
+
+        # Remove duplicate assignments
+        delete_duplicate_assignments(next_course)
+        return None
+    else:
+        delete_duplicate_assignments(next_course)
+        return "Assignment already exists in resit course"
+    
+@shared_task   
+def task_duplicate_for_resit(username, assignment_id):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    assignment = Assignment.objects.get(assignment_id=assignment_id)
+    course_id = assignment.course.course_id
+
+    headers = {'Authorization': 'Bearer {}'.format(API_TOKEN)}
+    url = '{}/api/v1/courses/{}/assignments/{}/duplicate'.format(API_URL, course_id, assignment_id)
+
+    r = requests.post(url, headers=headers)
+
+    if r.status_code == 200:
+
+        a = canvas.get_course(course_id).get_assignment(r.json()["id"])
+        a.edit(assignment={"name": "RESIT " + assignment.assignment_name.replace("Copy", ""),
+                        "unlock_at": "",
+                        "lock_at": "",
+                        "due_at": "",
+                        "description": "",
+                        "published": False,
+                        "only_visible_to_overrides": True})
+        
+        return "Assignment duplicated for RESIT"
+    else:
+        return "Couldn't duplicated for RESIT"
+
+
+def get_assignment_group(course, assignment, API_URL, API_TOKEN):
+
+    headers = {'Authorization': 'Bearer {}'.format(API_TOKEN)}
+    url = '{}/api/v1/courses/{}/assignment_groups'.format(API_URL, course.id)
+
+    data = {
+    'name': "Test",
+    'group_weight': 100,
+    'position': 0
+    }
+
+    r = requests.post(url, data=data, headers=headers)
+    return r
+
+    print(r.status_code)
+    # Get assignment groups
+    assignment_groups = [x for x in course.get_assignment_groups()]
+    assignment_label = find_first_match(assignment_pattern, assignment.name)[:9]
+    weight = find_first_match(weight_pattern, assignment.name)
+    
+
+    print("ASSIGNMENT GROUP NAME:", assignment_group_name)
+
+    # extract integers from string
+    try:
+        weight_int = int(re.findall(r'\d+', weight)[0])
+        assignment_group_name = assignment_label + " " + weight
+    except:
+        weight_int = 0
+        assignment_group_name = assignment_label
+
+    print("ASSIGNMENT GROUP NAME:", assignment_group_name)
+    print("ASSIGNMENT LABEL:", assignment_label)
+
+    # Check if assignment group exists
+    if assignment_label not in [x.name[:9] for x in assignment_groups]:
+        r = requests.post(url, headers=headers, data={'name': assignment_group_name, 'position': 1, 'group_weight': weight_int})
+        print("GROUP CREATION SUCCESS?", r.status_code)
+
+        if r.status_code == 200:
+            print("Assignment group created")
+            return r
+        else:
+            return "Couldn't create assignment group"
+
+
+    else:
+        # Get assignment group
+        group = [x for x in assignment_groups if x.name == assignment_group_name][0]
+        return group
 
 
 
