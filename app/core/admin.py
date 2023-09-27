@@ -40,9 +40,12 @@ class CourseAdmin(admin.ModelAdmin):
     actions = ["admin_get_assignments_by_course",
                "admin_get_enrollments_by_course",
                 export_as_csv_action(),
+                "organise_assignments",
+                "hide_totals",
                 "assign_resit_course",
-                "enroll_teachers_on_resit_course",
-                "create_assignment_summary"]
+                #"enroll_teachers_on_resit_course",
+                #"create_assignment_summary"
+    ]
 
     change_list_template = "core/courses_changelist.html"
 
@@ -112,6 +115,23 @@ class CourseAdmin(admin.ModelAdmin):
             request, "core/assign_resit_course_form.html", payload
         )
     
+    @admin.action(description="Organise assignments")
+    def organise_assignments(modeladmin, request, queryset):
+        if request.user.is_staff:
+            course_ids = [x.course_id for x in queryset]
+            for course_id in course_ids:
+                task_organise_assignments.delay(request.user.username, course_id)
+            messages.info(request, "Organising Assignments! This action is not instantaneous. Please check back later.")
+        
+    @admin.action(description="Hide totals from students")
+    def hide_totals(modeladmin, request, queryset):
+        if request.user.is_staff:
+            course_ids = [x.course_id for x in queryset]
+            for course_id in course_ids:
+                task_hide_totals.delay(request.user.username, course_id)
+            messages.info(request, "Hiding totals! This action is not instantaneous. Please check back later.")
+
+
     @admin.action(description="Create Assignment Summary Page")
     def create_assignment_summary(modeladmin, request, queryset):
         if request.user.is_staff:
@@ -710,7 +730,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
     def copy_to_next_term(modeladmin, request, queryset):
         if request.user.is_staff:
             assignment_ids = [x.assignment_id for x in queryset]
-            for assignment_id in assignment_ids:
+            for i, assignment_id in enumerate(assignment_ids):
                 task_copy_to_next_term_course.delay(request.user.username, assignment_id)
             messages.info(request, "Copying to next term course. This action is not instantaneous. Please check back later.")
 
@@ -736,10 +756,6 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
                 except:
                     print("No last term assignment found")
                     last_term_assignment = None
-
-            
-
-
 
 
 class DateAdmin(admin.ModelAdmin):

@@ -1250,22 +1250,26 @@ def task_make_only_visible_to_overrides(username, assignment_id):
 
 def delete_duplicate_assignments(course):
     # Remove duplicate assignments
-        all_assignments = [x for x in course.get_assignments()]
-        for assignment in all_assignments:
-            if assignment.name != consolidate_title(assignment.name):
-                assignment.edit(assignment={"name": consolidate_title(assignment.name)})
+    all_assignments = [x for x in course.get_assignments()]
 
-        assignment_names = [x.name for x in all_assignments]
+    #for assignment in all_assignments:
+        #if assignment.name != consolidate_title(assignment.name):
+            #assignment.edit(assignment={"name": consolidate_title(assignment.name)})
 
-        for assignment_name in assignment_names:
-            if assignment_names.count(assignment_name) > 1:
+    assignment_names = [x.name for x in all_assignments]
 
-                assignments_to_delete = [x for x in all_assignments if x.name == assignment_name][1:]
-                for assignment_to_delete in assignments_to_delete:
-                    try:
-                        assignment_to_delete.delete()
-                    except:
-                        continue
+   
+
+    for assignment_name in assignment_names:
+        if assignment_names.count(assignment_name) > 1:
+
+            assignments_to_delete = [x for x in all_assignments if x.name == assignment_name][1:]
+
+            for assignment_to_delete in assignments_to_delete:
+                try:
+                    assignment_to_delete.delete()
+                except:
+                    continue
 
 @shared_task
 def task_create_assignment_summary(username, course_id):
@@ -1560,66 +1564,106 @@ def task_duplicate_for_resit(username, assignment_id):
     else:
         return "Couldn't duplicated for RESIT"
 
+@shared_task
+def task_organise_assignments(username, course_id):
+    print("task_organise_assignments")
 
-def get_assignment_group(course, assignment, API_URL, API_TOKEN):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+    canvas = Canvas(API_URL, API_TOKEN)
+    print("course_id:", course_id)
+    course = canvas.get_course(course_id)
+
+    # Get all assignments
+    assignments = [x for x in course.get_assignments()]
+
+    # order assignments by name
+    assignments = sorted(assignments, key=lambda x: x.name)
+
+    # Organise assignments into groups
+    for assignment in assignments:
+        # Extract weight
+        try:
+            weight = find_first_match(weight_pattern, assignment.name)
+
+            # get integer from string using regex
+            weight = int(re.findall(r'\d+', weight)[0])
+
+            print(assignment, weight)
+        except:
+            weight = None
+
+        # Extract assignment label
+        #try:
+        assignment_label = find_first_match(assignment_pattern, assignment.name)[:9]
+            
+        # Check assignment group
+        group = get_assignment_group(course, assignment_label, weight, API_URL, API_TOKEN)
+
+        # Move assignment to group
+        assignment.edit(assignment={"assignment_group_id": group.id})
+
+        print("Assignment {} moved to group {}".format(assignment.name, group.name))
+
+        #except:
+            #print("Couldn't extract assignment label")
+            #continue
+
+        course.update(
+            course={"apply_assignment_group_weights": True}
+        )
+
+    return "Assignments organised."
+
+        
+def get_assignment_group(course, assignment_label, weight, API_URL, API_TOKEN):
+
+    # Check if group exists
+    try:
+        assignment_groups = [x for x in course.get_assignment_groups()]
+        group = [x for x in assignment_groups if x.name == assignment_label][0]
+        return group
+    except:
+        # Create group
+
+        headers = {'Authorization': 'Bearer {}'.format(API_TOKEN)}
+        url = '{}/api/v1/courses/{}/assignment_groups'.format(API_URL, course.id)
+
+        data = {
+        'name': assignment_label[:9],
+        'group_weight': weight,
+        }
+
+        r = requests.post(url, data=data, headers=headers)
+        
+        if r.status_code == 200:
+            group_data = r.json()
+            group = course.get_assignment_group(group_data["id"])
+            return group
+        
+@shared_task
+def task_hide_totals(username, course_id):
+    print("task_hide_totals")
+
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+    canvas = Canvas(API_URL, API_TOKEN)
 
     headers = {'Authorization': 'Bearer {}'.format(API_TOKEN)}
-    url = '{}/api/v1/courses/{}/assignment_groups'.format(API_URL, course.id)
+    url = '{}/api/v1/courses/{}/settings'.format(API_URL, course_id)
 
     data = {
-    'name': "Test",
-    'group_weight': 100,
-    'position': 0
+        'hide_final_grades':True
     }
 
-    r = requests.post(url, data=data, headers=headers)
-    return r
+    r = requests.put(url, data=data, headers=headers)
 
-    print(r.status_code)
-    # Get assignment groups
-    assignment_groups = [x for x in course.get_assignment_groups()]
-    assignment_label = find_first_match(assignment_pattern, assignment.name)[:9]
-    weight = find_first_match(weight_pattern, assignment.name)
-    
-
-    print("ASSIGNMENT GROUP NAME:", assignment_group_name)
-
-    # extract integers from string
-    try:
-        weight_int = int(re.findall(r'\d+', weight)[0])
-        assignment_group_name = assignment_label + " " + weight
-    except:
-        weight_int = 0
-        assignment_group_name = assignment_label
-
-    print("ASSIGNMENT GROUP NAME:", assignment_group_name)
-    print("ASSIGNMENT LABEL:", assignment_label)
-
-    # Check if assignment group exists
-    if assignment_label not in [x.name[:9] for x in assignment_groups]:
-        r = requests.post(url, headers=headers, data={'name': assignment_group_name, 'position': 1, 'group_weight': weight_int})
-        print("GROUP CREATION SUCCESS?", r.status_code)
-
-        if r.status_code == 200:
-            print("Assignment group created")
-            return r
-        else:
-            return "Couldn't create assignment group"
-
-
+    if r.status_code == 200:
+        return "Totals hidden"
     else:
-        # Get assignment group
-        group = [x for x in assignment_groups if x.name == assignment_group_name][0]
-        return group
-
-
-
-
-
-
-
-
-    
+        return "Couldn't hide totals"
 
 
 
