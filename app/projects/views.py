@@ -100,8 +100,6 @@ def staff_project(request):
 
 def project_details(request):
 
-    print(request)
-
     if request.method == "POST":
         staff = Staff.objects.get(pk=int(request.POST["staff"]))
 
@@ -112,15 +110,15 @@ def project_details(request):
 
 
         if form.is_valid():
-            print("FORM IS VALID")
+            print("FORM IS VALID !!!!!!")
             staff = form.cleaned_data["staff"]
+
+
 
            
             
-            inst = form.save(commit=False)
-            inst.active = True
-            print("SAVING")
-            inst.save()
+            inst = form.save()
+ 
 
             projects = Project.objects.filter(staff=staff)
             staff = Staff.objects.get(id=staff.id)
