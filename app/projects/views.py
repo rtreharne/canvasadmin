@@ -113,10 +113,6 @@ def project_details(request):
             print("FORM IS VALID !!!!!!")
             staff = form.cleaned_data["staff"]
 
-
-
-           
-            
             inst = form.save()
  
 
