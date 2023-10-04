@@ -88,6 +88,7 @@ def export_student_as_csv(modeladmin, request, queryset):
         'prioritised_keywords', 
         'prioritised_types',
         'allocation_priority',
+        'modules',
     ]  # Add your field names here
 
     writer.writerow(fields)
@@ -117,6 +118,7 @@ def export_student_as_csv(modeladmin, request, queryset):
                 obj.project_type_5,
             ]),
             obj.priority,
+            ', '.join(str(value) for value in obj.modules.all()),
 
         ]
 
