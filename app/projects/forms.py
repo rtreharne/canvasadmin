@@ -28,6 +28,7 @@ class ExistingStaffForm(Form):
 class StaffForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(StaffForm, self).__init__(*args, **kwargs)
+        self.fields['school'].required = True
 
     agree = BooleanField(label="I have read and agree to the <a href='projects/tandc'>Terms and Conditions</a> "
                                "and <a href='/projects/privacy'>Privacy Policy<a>",
