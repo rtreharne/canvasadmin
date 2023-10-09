@@ -186,7 +186,7 @@ def staff_details(request):
             form.save()
             staff = Staff.objects.get(username=form.cleaned_data['username'])
             staff.username = staff.username.lower()
-            project_form = ProjectForm()
+            project_form = ProjectForm(staff=staff)
             project_form['staff'].initial = staff
             return render (request, "projects/project.html", {'form': project_form,
                                                       'staff': staff})

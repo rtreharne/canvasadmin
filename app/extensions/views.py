@@ -92,7 +92,7 @@ def assignment(request, student_id, course_canvas_id):
             # Check if approved elp exists for assignment
 
             try:
-                approved = Extension.objects.get(student=student, assignment=assignment, approved=True)
+                approved = Extension.objects.get(student=student, assignment=assignment, approved=False)
                 error_message = ''
                 if root == 'elp':
                     error_message += '<p class="error">You have already been granted an ELP for this assignment.</p>'
@@ -214,6 +214,7 @@ def confirmation(request, confirmation_id):
         if root == 'elp':
             count = Extension.objects.filter(student=extension.student, extension_deadline__lte=date.finish, extension_deadline__gte=date.start, approved=True).exclude(late_ignore=True).count()
             print("Count:", count)
+            count = 10
             if count < 2:
                 extension.approved = True
                 extension.approved_on = datetime.datetime.now()

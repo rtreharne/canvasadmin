@@ -69,9 +69,8 @@ class ProjectForm(ModelForm):
 
         staff = kwargs.pop('staff')
         super(ProjectForm, self).__init__(*args, **kwargs)
-        
+     
         # print out initial form values
-        print("setting the form up")   
      
         self.fields['project_area'].queryset = ProjectArea.objects.filter(school=staff.school).order_by('title')
         self.fields['project_keyword'].queryset = ProjectKeyword.objects.filter(verified=True, school=staff.school).order_by('title')
