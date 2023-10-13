@@ -368,15 +368,17 @@ def update_assignments(username, assignment_ids):
                 datetime = is_datetime(canvas_assignment.__dict__.get(key, None))
                     
                 if datetime:
+
+                    if key == "due_at":
+                        if canvas_assignment.has_overrides:
+                            canvas_assignment = canvas.get_course(a.course.course_id).get_assignment(a.assignment_id, all_dates=True)
+                            for item in canvas_assignment.all_dates:
+                                if 'base' in item and item['base']:
+                                    datetime = is_datetime(item['due_at'])
+                        
                     if len(str(a.__dict__[key])) <1:
                         pass
                     else:
-                        #try:
-                            #dt_flag=True
-                            #datetime != a.__dict__[key].replace(tzinfo=None)
-                        #except:
-                            #dt_flag=False
-
                         
                         print(key, "updated")
                         
