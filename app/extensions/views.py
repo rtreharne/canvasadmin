@@ -95,11 +95,11 @@ def assignment(request, student_id, course_canvas_id):
                 approved = Extension.objects.get(student=student, assignment=assignment, approved=False)
                 error_message = ''
                 if root == 'elp':
-                    error_message += '<p class="error">You have already been granted an ELP for this assignment.</p>'
+                    error_message += '<p class="error">You have already been applied for an ELP for this assignment.</p>'
                     return render(request, 'extensions/elp_assignment.html', {'form': form,
                                                                                   'error_message': error_message})
                 elif root == 'extensions':
-                    error_message += '<p class="error">You have already been granted an extension for this assignment.</p>'
+                    error_message += '<p class="error">You have already applied for an extension for this assignment.</p>'
                     return render(request, 'extensions/extensions_assignment.html', {'form': form,
                                                                                     'error_message': error_message})
                 

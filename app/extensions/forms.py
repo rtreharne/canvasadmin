@@ -64,6 +64,7 @@ class AssignmentForm(forms.Form):
     Use a ChoiceField to display the assignments (not a ModelChoiceField).
     """
 
+    
     def __init__(self, *args, **kwargs):
         print("kwargs:", kwargs)
         print("args:", args)
@@ -107,7 +108,7 @@ class AssignmentForm(forms.Form):
             # get count of approved extensions for the student that are within the current date range and have no files attached
             count = Extension.objects.filter(student=student, extension_deadline__lte=date.finish, extension_deadline__gte=date.start, approved=True, files__exact="").exclude(late_ignore=True).count()
 
-            print("count:", count)
+            print("count:", count, "hello")
 
             if count <2:
                 file_required = False
@@ -118,11 +119,32 @@ class AssignmentForm(forms.Form):
 
 
             self.fields['files'] = forms.FileField(
-            required=file_required,
             label="Evidence upload",
             help_text=file_help_text,
-
+            required=False
             )
+
+            if count <2:
+                self.fields['confirm_self_certified'] = forms.BooleanField(
+                    required=True,
+                    label= "Confirmation",
+                    help_text="I understand that if I choose to submit this form without evidence my application will be considered as one of two self-certified ELPs available to me during this assessment period."
+                    )
+                
+    def clean(self):
+            cleaned_data = super().clean()
+            files = cleaned_data.get('files')
+            checkbox = cleaned_data.get('late_ignore')
+            confirmation = cleaned_data.get('confirm_self_certified')
+
+            print(files, checkbox, confirmation)
+
+            
+            if not checkbox and not files and not confirmation:
+                raise forms.ValidationError("Please upload evidence.")
+
+            return cleaned_data
+        
         
   
 

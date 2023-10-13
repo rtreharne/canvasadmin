@@ -56,9 +56,13 @@ class Extension(models.Model):
     files = models.FileField(upload_to='extensions/evidence', null=True, blank=True, verbose_name="Evidence upload")
     late_ignore = models.BooleanField(default=False, verbose_name="Less than 5 minutes late?")
 
+    confirm_self_certified = models.BooleanField(default=False, verbose_name="I confirm I understand that if I choose to submit this form without evidence my application will be considered as one of two self-certified ELPs available to me during this assessment period.")
+
     # Create a confirmation id field using uuid
     confirmation_id = models.UUIDField(default=uuid.uuid4, editable=False, null=True, blank=True)
     confirmed = models.BooleanField(default=False)
+
+
 
 
 
