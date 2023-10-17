@@ -6,7 +6,7 @@ class Sample(models.Model):
 
 class Course(models.Model):
     course_code = models.CharField(max_length=128, unique=True)
-    course_id = models.IntegerField(null=True, blank=True)
+    course_id = models.IntegerField(null=True, blank=True, unique=True)
     course_name = models.CharField(max_length=128)
     course_department = models.ForeignKey(Department, null=True, blank=True, on_delete=models.PROTECT)
     resit_course = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
