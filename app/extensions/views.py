@@ -131,7 +131,7 @@ def assignment(request, student_id, course_canvas_id):
                 except Submission.DoesNotExist:
                     error_message = ''
                     error_message += '<p class="error">You cannot apply for an ELP until you have submitted this assignment via Canvas.</p>'
-                    error_message += '<p>If you have submitted recently then please wait a few minutes and try again.</p><p>If you are making an application more than 24 hours after submission and you are still seeing this message please contact <a href="mailto:SLSAssessment@liverpool.ac.uk">SLSAssessment@liverpool.ac.uk</a></p>'
+                    error_message += '<p>If you have submitted recently then please wait a few minutes and try again.</p><p>If you are making an application more than 24 hours after submission and you are still seeing this message please contact <a href="mailto:SLS-Assessment@liverpool.ac.uk">SLS-Assessment@liverpool.ac.uk</a></p>'
                     task_get_submission.delay(request.user.username, assignment.assignment_id)
 
         
