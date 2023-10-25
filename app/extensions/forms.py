@@ -72,6 +72,7 @@ class AssignmentForm(forms.Form):
         course_canvas_id = kwargs.pop('course_canvas_id', None)
         student_id = kwargs.pop('student_id', None)
         root = kwargs.pop('root', None)
+        self.root = root
         super(AssignmentForm, self).__init__(*args, **kwargs)
 
         assignments = [x.id for x in Assignment.objects.filter(course__course_id=course_canvas_id, active=True) if x.due_at]
@@ -140,8 +141,9 @@ class AssignmentForm(forms.Form):
             print(files, checkbox, confirmation)
 
             
-            if not checkbox and not files and not confirmation:
-                raise forms.ValidationError("Please upload evidence.")
+            if self.root == 'elp':
+                if not checkbox and not files and not confirmation:
+                    raise forms.ValidationError("Please upload evidence.")
 
             return cleaned_data
         
