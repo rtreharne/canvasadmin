@@ -87,12 +87,21 @@ def send_receipt(extension, current_host, root):
     message_html += "Course: {}\n\n".format(course_name)
     message_html += "Assignment: {}\n\n".format(assignment_name)
     message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-    message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    if label == 'extension':
+        message_html += "Date of Extension: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    else:
+        message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
 
     message_html += "Please click the link below to confirm your request (you may need to copy and paste the link into your browser).\n\n"
     message_html += "http://{}\n\n".format(confirmation_url)
+
+    if label == 'extension':
+        message_html += "If you have any questions then please don't hesitate to contact us.\n\n"
+        message_html += "SLS Disability Support Team"
+    if root == 'elp':
+        message_html += "If you have any questions then please don't hesitate to contact the School Assessment team at sls-assessment@liverpool.ac.uk.\n\n"
+
     
-    message_html += "This is an automated message. Please do not reply to this email.\n\n"
 
         
 
@@ -146,11 +155,23 @@ def send_approved(extension, root):
     message_html += "Assignment: {}\n\n".format(assignment_name)
     message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
     if label == 'extension':
-        message_html += "Extension deadline: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+        message_html += "Date of Extension: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
     else:
         message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
     
-    message_html += "This is an automated message. Please do not reply to this email.\n\n"
+
+
+    if label == 'extension':
+        message_html += "Please ensure you submit by the new deadline to avoid incurring any penalites.\n\n"
+        message_html += "Any submissions made up to the above date will not be subject to penatly. This will be reflected in your Canvas makrs, however please remember Canvas marks are provisional as all marks are subject to ratification by the Board of Examiners.\n\n"
+        message_html += "Please keep this message safe as your confirmation of an accepted extension application for this assignment.\n\n"
+        message_html += "If you have any questions then please don't hesitate to contact us.\n\n"
+        message_html += "SLS Disability Support Team"
+    if root == 'elp':
+        message_html += "This assignment will not be subject to penalties and your original mark will be reinstated in Canvas in due course.\n\n"
+        message_html += "Please note that all assessment marks are provisional until they are ratified by the Board of Examiners.\n\n"
+        message_html += "Please keep this message safe as your confirmation of an accepted extension application for this assignment.\n\n"
+        message_html += "If you have any questions then please don't hesitate to contact the School Assessment team at sls-assessment@liverpool.ac.uk.\n\n"
 
         
 
