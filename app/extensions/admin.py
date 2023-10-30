@@ -9,6 +9,7 @@ from .admin_actions import export_as_csv_action
 from accounts.models import UserProfile
 from django.utils.html import format_html
 from django.contrib import messages
+from .filters import DateFilter
 
 class ExtensionAdmin(admin.ModelAdmin):
     list_display = (
@@ -31,6 +32,7 @@ class ExtensionAdmin(admin.ModelAdmin):
         "extension_type",
         "approved",
         "course",
+        DateFilter
         
     )
 
