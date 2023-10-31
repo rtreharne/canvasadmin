@@ -74,9 +74,9 @@ def assignment(request, student_id, course_canvas_id):
             for f in files:
                 extension = f.name.split(".")[-1]
                 print(extension)
-                if extension not in ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'zip']:
+                if extension not in ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'zip', 'msg']:
                     error_message = ''
-                    error_message += '<p class="error">You have uploaded a file with an invalid extension. Please upload a file with one of the following extensions: pdf, doc, docx, jpg, jpeg, png.</p>'
+                    error_message += '<p class="error">You have uploaded a file with an invalid extension. Please upload a file with one of the following extensions: pdf, doc, docx, jpg, jpeg, png, msg.</p>'
                     return render(request, 'extensions/elp_assignment.html', {'form': form,
                                                                                 'error_message': error_message})  
         if form.is_valid():
