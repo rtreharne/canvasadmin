@@ -7,7 +7,6 @@
 <div class="jumbotron text-center">
   <div class="container">
     <h1>Staff Details</h1>
-    <a href="/projects">< Back</a>
     <p>Enter your details before submitting your projects.</p>
       {% if form.errors %}
       <p><b>There was an error in the form below. Please check.</b></p>
@@ -20,7 +19,7 @@
     <div class="alert alert-info text-center" role="alert">
         Already filled in your details?
         <br>
-        <b>Click <a href="{% url 'projects:returning-staff' %}">here</a> to add project details.</b>
+        <b>Click <a href="{% url 'projects:returning-staff' %}">here</a> to add keywords and preferences.</b>
      </div>
 
       <form action="" method="post">

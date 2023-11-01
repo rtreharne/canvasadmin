@@ -137,7 +137,7 @@ class Project(models.Model):
                                                                                                          Do not repeat the one from the previous question. If you feel there is a very obvious keyword missing, then please contact Andy Bates (<a href="mailto:bates@liv.ac.uk">bates@liv.ac.uk</a>).'
                                              )
     suggested_keyword = models.CharField(max_length=128, help_text="If nothing in the list above is suitable, or there has been an obvious omission, please submit additional relevant keywords. Separate each keyword with a comma, e.g. 'keyword1, keyword2'", null=True, default=None, blank=True)
-    project_type = models.ForeignKey(ProjectType, verbose_name="Primary project type", on_delete=models.PROTECT, help_text="If you wish to offer projects of two or more primary types then you will need to complete a separate version of this form for each (you will be prompted).")
+    project_type = models.ForeignKey(ProjectType, verbose_name="Primary project type", on_delete=models.PROTECT)
     other_type = models.ManyToManyField(ProjectType, related_name="other_type", verbose_name="Secondary project types (optional)", null=True, blank=True, default=None, help_text="You can select up to two secondary project types (e.g. Projects with a 'Laboratory' primary type may also involve 'Modelling' etc.)")
     prerequisite = models.ForeignKey(Module, on_delete=models.PROTECT, verbose_name="Prerequisite module",
                                      blank=True,

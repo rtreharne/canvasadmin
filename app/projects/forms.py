@@ -88,6 +88,22 @@ class ProjectForm(ModelForm):
             self.fields['title'] = CharField(widget=HiddenInput(), initial=staff.username, required=False)
             self.fields['description'] = CharField(widget=HiddenInput(), initial=staff.username, required=False)
             self.fields['number'] = CharField(widget=HiddenInput(), initial=1)
+            
+            # Re label project_area to "Cognate Area"
+            self.fields['project_area'].label = "Cognate Area"
+            self.fields['project_area'].help_text = "Please select a single cognate area that best describes your interests.  If you wish to offer projects in two or more distinct research areas that cannot be encompassed by the same cognate area, then you will need to add a new preference set."
+            self.fields['project_keyword'].label = "Keywords"
+
+            self.fields['project_keyword'].help_text = 'Hold down "Control", or "Command" on Mac, to select more than one. Please select a minimum of three and a maximum of 5 additional keywords. Do not repeat the one from the previous question. If you feel there is a very obvious keyword missing, then please contact Alan Radford.'
+
+            # Hide "advanced_bio_msc" field
+            self.fields['advanced_bio_msc'].widget = HiddenInput()
+            self.fields['staff'].widget = HiddenInput()
+
+            self.fields['project_type'].help_text = "Please select a single project type that best describes your interests.  If you wish to offer projects of two or more distinct types then you will need to add a new preference set."
+
+
+
 
         modules = Module.objects.filter(school=staff.school).order_by('code')
         if not modules:
@@ -97,7 +113,7 @@ class ProjectForm(ModelForm):
 
 
 
-    description = CharField(widget=Textarea, help_text="A couple of sentences describing the project area, rather than a specific project.  If you wish to offer projects in two or more distinct research areas that cannot be encompassed by the same description, then you will need to complete a separate version of this form for each (you will be prompted). (Max. 1000 chars.)")
+    #description = CharField(widget=Textarea, help_text="A couple of sentences describing the project area, rather than a specific project.  If you wish to offer projects in two or more distinct research areas that cannot be encompassed by the same description, then you will need to complete a separate version of this form for each (you will be prompted). (Max. 1000 chars.)")
     #other_comments = CharField(widget=Textarea, required=False, label="Optionally, please elaborate.")
     #feedback_text = CharField(label="Additional feedback", widget=Textarea, required=False, help_text='Any additional feedback that can help make this web application better is greatly appreciated. (Max. 200 chars.)')
     #summer_fieldwork = ChoiceField(label="Please indicate if there are reasons (Covid-19 shielding, for example) \
