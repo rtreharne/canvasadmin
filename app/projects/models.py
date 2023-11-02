@@ -23,12 +23,15 @@ class ProjectArea(models.Model):
         return self.title
 
 class ProjectKeyword(models.Model):
-    title = models.CharField(max_length=128, unique=True)
+    title = models.CharField(max_length=128)
     description = models.CharField(max_length=200, blank=True, default=None, null=True)
     verified = models.BooleanField(default=True)
     school = models.ForeignKey(Department, on_delete=models.PROTECT, null=True, blank=True)
 
-
+    # Add unique constraint for title and school
+    class Meta:
+        unique_together = ('title', 'school')
+        
     def __str__(self):
         return self.title
 
