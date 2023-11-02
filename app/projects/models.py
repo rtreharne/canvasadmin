@@ -36,13 +36,13 @@ class ProjectKeyword(models.Model):
         return self.title
 
 class ProjectType(models.Model):
-    title = models.CharField(max_length=128, unique=True)
+    title = models.CharField(max_length=128)
     description = models.CharField(max_length=200, blank=True, default=None, null=True)
     school = models.ForeignKey(Department, on_delete=models.PROTECT, null=True, blank=True)
 
     class Meta:
         unique_together = ('title', 'school')
-        
+
     def __str__(self):
         return self.title
 
