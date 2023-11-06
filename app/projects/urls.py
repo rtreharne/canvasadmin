@@ -8,7 +8,8 @@ from . import views
 app_name = 'projects'
 
 urlpatterns = [
-    path("", views.index, name="index"),
+    #path("", views.index, name="index"),
+    path("", views.returning_staff, name="returning-staff"),
     path("back/", views.back, name="back"),
     path("SVS", views.SVS, name="SVS"),
     path("staff_details/", views.staff_details, name="staff-details"),

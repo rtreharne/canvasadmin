@@ -94,7 +94,7 @@ class ProjectForm(ModelForm):
             self.fields['project_area'].help_text = "Please select a single cognate area that best describes your interests.  If you wish to offer projects in two or more distinct research areas that cannot be encompassed by the same cognate area, then you will need to add a new preference set."
             self.fields['project_keyword'].label = "Keywords"
 
-            self.fields['project_keyword'].help_text = 'Hold down "Control", or "Command" on Mac, to select more than one. Please select a minimum of three and a maximum of 5 additional keywords. Do not repeat the one from the previous question. If you feel there is a very obvious keyword missing, then please contact Alan Radford.'
+            self.fields['project_keyword'].help_text = 'Hold down "Control", or "Command" on Mac, to select more than one. Please select a minimum of one and a maximum of 5 additional keywords. Do not repeat the one from the previous question. If you feel there is a very obvious keyword missing, then please contact Alan Radford.'
 
             # Hide "advanced_bio_msc" field
             self.fields['advanced_bio_msc'].widget = HiddenInput()
@@ -148,8 +148,8 @@ class ProjectForm(ModelForm):
 
     def clean_project_keyword(self):
         project_keyword = self.cleaned_data['project_keyword']
-        if len(project_keyword) < 3:
-            raise ValidationError("Please select at least three keywords.")
+        if len(project_keyword) < 1:
+            raise ValidationError("Please select at least one keyword.")
         if len(project_keyword) > 5:
             raise ValidationError("Please select five keywords or less.")
         return project_keyword
