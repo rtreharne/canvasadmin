@@ -10,6 +10,7 @@ class Course(models.Model):
     course_name = models.CharField(max_length=128)
     course_department = models.ForeignKey(Department, null=True, blank=True, on_delete=models.PROTECT)
     resit_course = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
+    active = models.BooleanField(default=True, verbose_name="Active Flag")
         
     def __str__(self):
         return self.course_code

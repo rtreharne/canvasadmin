@@ -177,7 +177,7 @@ def task_get_all_assignments(username):
 @shared_task
 def get_all_submissions(username):
     user = UserProfile.objects.get(user__username=username)
-    assignments = Assignment.objects.filter(department=user.department)
+    assignments = Assignment.objects.filter(department=user.department, active=True)
     assignment_ids = [x.assignment_id for x in assignments]
     task_get_submissions.delay(username, assignment_ids)
 
@@ -189,9 +189,10 @@ def update_all_assignments(username):
     assignment_ids = [x.assignment_id for x in assignments]
     update_assignments.delay(username, assignment_ids)
 
+@shared_task
 def update_all_submissions(username):
     user = UserProfile.objects.get(user__username=username)
-    submissions = Submission.objects.filter(department=user.department)
+    submissions = [x for x in Submission.objects.filter(department=user.department) if x.assignment.active]
     submission_ids = [x.submission_id for x in submissions]
     update_submissions.delay(username, submission_ids)
 
@@ -482,6 +483,8 @@ def is_datetime(dt):
 @shared_task()
 def task_get_submissions(username, assignment_ids):
     print("assignment_ids", assignment_ids)
+    assignments = Assignment.objects.filter(assignment_id__in=assignment_ids)
+    assignment_ids = [x.assignment_id for x in assignments if x.active]
     for assignment_id in assignment_ids:
         task_get_submission(username, assignment_id)
 
@@ -656,7 +659,7 @@ def update_submissions(username, submission_ids):
     API_TOKEN = user.department.CANVAS_API_TOKEN
     canvas = Canvas(API_URL, API_TOKEN)
 
-    submissions = Submission.objects.filter(submission_id__in=submission_ids)
+    submissions = Submission.objects.filter(submission_id__in=submission_ids, assignment__active=True)
 
     app_canvas_mapp = {
         "score": "score",
