@@ -61,6 +61,7 @@ class Extension(models.Model):
     # Create a confirmation id field using uuid
     confirmation_id = models.UUIDField(default=uuid.uuid4, editable=False, null=True, blank=True)
     confirmed = models.BooleanField(default=False)
+    submitted_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
 
 

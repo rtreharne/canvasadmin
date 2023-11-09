@@ -23,7 +23,8 @@ class ExtensionAdmin(admin.ModelAdmin):
         "approved",
         "approved_by",
         "confirmed",
-        "evidence"
+        "evidence",
+        "submitted_at",
     )
 
     list_filter = (
