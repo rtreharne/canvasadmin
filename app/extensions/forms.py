@@ -106,8 +106,8 @@ class AssignmentForm(forms.Form):
             date = Date.objects.get(start__lte=now, finish__gte=now)
             print("Dates:", date.start, date.finish, now)
 
-            # get count of approved extensions for the student that are within the current date range and have no files attached
-            count = Extension.objects.filter(student=student, extension_deadline__lte=date.finish, extension_deadline__gte=date.start, approved=True, files__exact="").exclude(late_ignore=True).count()
+            # get count of approved exemptions from late penalties for the student that are within the current date range and have no files attached
+            count = Extension.objects.filter(student=student, extension_deadline__lte=date.finish, extension_deadline__gte=date.start, approved=True, files__exact="", extension_type__contains="ELP").exclude(late_ignore=True).count()
 
             print("count:", count, "hello")
 
