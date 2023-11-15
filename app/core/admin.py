@@ -154,14 +154,61 @@ class StudentAdmin(admin.ModelAdmin):
         "sortable_name",
         "sis_user_id",
         "canvas_id",
-        "login_id"
+        "login_id",
+        "support_plan",
     )
 
     search_fields = (
         "sortable_name",
     )
 
+    list_editable= ("support_plan",)
+
     actions = [export_as_csv_action(),]
+
+    change_list_template = "core/students_changelist.html"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path('import-csv/', self.import_csv),
+        ]
+        return my_urls + urls
+
+    def import_csv(self, request):
+        if request.method == "POST":
+            file = request.FILES["csv_file"]
+
+            decoded_file = file.read().decode('utf-8').splitlines()
+            reader = csv.reader(decoded_file)
+
+            # get columns
+            columns = next(reader)
+
+            # format reader as list of dicts
+            data = []
+            [data.append({x: y for x, y in zip(columns, row)}) for row in reader]
+
+            for item in data:
+                print(item["student_id"], type(item["student_id"]))
+                try:
+                    student = Student.objects.filter(sis_user_id__contains=str(item["student_id"]))[0]
+                    student.support_plan = True
+                    student.marker_message = item["message"]
+                    student.save()
+
+                except:
+                    print("Student not found.")
+
+            
+            self.message_user(request, "Your csv file has been imported. Your student records have been updated.")
+            return redirect("..")
+        
+        form = CsvImportForm()
+        payload = {"form": form}
+        return render(
+            request, "csv_form.html", payload
+        )
 
 
 class SecondsLateFilter(admin.SimpleListFilter):

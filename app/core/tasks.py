@@ -509,7 +509,7 @@ def task_get_submission(username, assignment_id):
 
     if assessment_exists:
 
-        submissions = [x for x in a.get_submissions(include=["assignment", "user", "submission_comments", "full_rubric_assessment"])]
+        submissions = [x for x in a.get_submissions(include=["assignment", "user", "submission_comments", "full_rubric_assessment", "submission_history"])]
 
         missing_students = False
         enrollments = False
@@ -648,6 +648,18 @@ def task_get_submission(username, assignment_id):
                         )
                         new_submission.save()
                         print("submission_added")
+                        print("submission_history:", sub.submission_history)
+
+                        # Check for SpLDs
+                        if student.support_plan:
+                            # Get number of sub attempts
+                            attempts = sub.attempt
+                            if attempts == None or attempts == 1:
+                                attempt = 1
+                            else:
+                                attempt = attempts
+                            
+                                sub.edit(comment={"text_comment":student.marker_message, "attempt": attempt})
                     except:
                         print("submission not added")
 
@@ -674,7 +686,7 @@ def update_submissions(username, submission_ids):
         
 
         try:
-            canvas_submission = canvas.get_course(sub.assignment.course.course_id).get_assignment(sub.assignment.assignment_id).get_submission(sub.student.canvas_id, include=["user", "submission_comments", "full_rubric_assignment"])
+            canvas_submission = canvas.get_course(sub.assignment.course.course_id).get_assignment(sub.assignment.assignment_id).get_submission(sub.student.canvas_id, include=["user", "submission_comments", "full_rubric_assignment", "submission_history"])
         except:
             print("couldn't get canvas submission")
             continue
@@ -769,6 +781,7 @@ def update_submissions(username, submission_ids):
 
             sub.save()
 
+                
 @shared_task()
 def add_five_minutes_to_deadlines(username, assignment_ids):
     for assignment_id in assignment_ids:

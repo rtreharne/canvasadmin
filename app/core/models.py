@@ -58,6 +58,8 @@ class Student(models.Model):
     sis_user_id = models.CharField(max_length=256, null=True, blank=True)
     canvas_id = models.IntegerField(unique=True)
     login_id = models.EmailField(null=True, blank=True)
+    support_plan = models.BooleanField(default=False, verbose_name="SpLD")
+    marker_message = models.TextField(null=True, blank=True)
     
     def __str__(self):
         return self.sortable_name
