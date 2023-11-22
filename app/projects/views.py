@@ -250,7 +250,10 @@ def student(request, school=None):
                 print("form is valid!")
                 try:
                     # create instance of form without saving
-                    inst = form.save()
+                    inst = form.save(commit=False)
+                    inst.school = department
+                    inst.save()
+                    print(inst.school)
                 
                 except IntegrityError:
                     form.add_error(None, "UNIQUE")
