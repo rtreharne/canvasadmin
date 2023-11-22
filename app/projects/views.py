@@ -222,7 +222,10 @@ def student(request, school=None):
     print("Printing school", school)
 
     if school:
+        # make school all upper case
+        school = school.upper()
         department = Department.objects.get(label=school)
+        #department = Department.objects.get(label=school)
     else:
         department = Department.objects.get(label="SOLS")
 
