@@ -164,8 +164,6 @@ class ProjectForm(ModelForm):
 
 class StudentForm(ModelForm):
 
-    
-
     def __init__(self, *args, **kwargs):
 
         self.PROGRAMME_CHOICES = (("Not Applicable", "Not Applicable"),
@@ -199,6 +197,8 @@ class StudentForm(ModelForm):
         self.fields['project_keyword_4'].queryset = ProjectKeyword.objects.filter(school=school).order_by('title')
         self.fields['project_keyword_5'].queryset = ProjectKeyword.objects.filter(school=school).order_by('title')
         self.fields['modules'].queryset = Module.objects.filter(school=school).order_by('code')
+        self.fields['school'].queryset = Department.objects.filter(name=school.name)
+        self.fields['school'].initial = school
 
         if school.name != "School of Life Sciences":
             self.fields["masters_pathway"].widget = HiddenInput()
@@ -212,9 +212,9 @@ class StudentForm(ModelForm):
 
 
     student_id = CharField(label="Student ID", required=True, help_text="e.g. 200123456")
-    feedback_text = CharField(label="Additional feedback", widget=Textarea, required=False, help_text='Any additional feedback that can help make this web application better is greatly appreciated. (Max. 200 chars.)')
-    feedback_consent = BooleanField(label="Are you happy for your feedback to be anonymised and used"
-                                          " in educational research studies?", required=False)
+    #feedback_text = CharField(label="Additional feedback", widget=Textarea, required=False, help_text='Any additional feedback that can help make this web application better is greatly appreciated. (Max. 200 chars.)')
+    #feedback_consent = BooleanField(label="Are you happy for your feedback to be anonymised and used"
+                                          #" in educational research studies?", required=False)
 
     agree = BooleanField(label="I have read and agree to the <a href='/projects/tandc'>Terms and Conditions</a> "
                                "and <a href='/projects/privacy'>Privacy Policy<a>",
@@ -268,7 +268,7 @@ class StudentForm(ModelForm):
 
     class Meta:
         model = Student
-        exclude = ("masters", "feedback_consent", "comments",
+        exclude = ("masters", "feedback_consent", "comments", "feedback_rating"
                    )
 
 """

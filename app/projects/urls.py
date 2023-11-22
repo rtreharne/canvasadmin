@@ -21,6 +21,7 @@ urlpatterns = [
     #path("download_student/", views.download_student, name='downlaod-student'),
     #path("download_staff/", projects.views.download_staff, name='download-staff'),
     #path("iacd_download/", projects.views.iacd_download, name='iacd-download'),
+    path("student/svs", views.student, name='student'),
     path("student/", views.student, name='student'),
     path("<str:school>/student/", views.student, name='student'),
     path("tandc/", views.tandc, name='tandc'),

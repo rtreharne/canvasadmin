@@ -656,10 +656,12 @@ def task_get_submission(username, assignment_id):
                             attempts = sub.attempt
                             if attempts == None or attempts == 1:
                                 attempt = 1
+                                sub.edit(comment={"text_comment":student.marker_message, "attempt": attempt})
+                                print("SpLD message added (on first submission)")
                             else:
                                 attempt = attempts
-                            
                                 sub.edit(comment={"text_comment":student.marker_message, "attempt": attempt})
+                                print("SpLD message added (on most recent submission)")
                     except:
                         print("submission not added")
 

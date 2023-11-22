@@ -218,6 +218,9 @@ def check_unique_set(request, key):
 
 def student(request, school=None):
 
+
+    print("Printing school", school)
+
     if school:
         department = Department.objects.get(label=school)
     else:
@@ -243,7 +246,9 @@ def student(request, school=None):
             if form.is_valid():
                 print("form is valid!")
                 try:
+                    # create instance of form without saving
                     inst = form.save()
+                
                 except IntegrityError:
                     form.add_error(None, "UNIQUE")
 

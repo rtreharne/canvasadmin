@@ -188,10 +188,11 @@ class Student(models.Model):
         ("3", "It doesn't matter"),
     )
     
-    student_id = models.CharField(max_length=128, validators=[RegexValidator(regex='^\d{9}$', message='This must be a nine digit number', code='nomatch')], unique=False)
+    student_id = models.CharField(max_length=128, validators=[RegexValidator(regex='^\d{9}$', message='This must be a nine digit number', code='nomatch')], unique=True)
     last_name = models.CharField(max_length=28)
     first_name = models.CharField(max_length=28)
     email = models.EmailField(max_length=128)
+    school = models.ForeignKey(Department, on_delete=models.PROTECT, null=True, blank=True)
     programme = models.CharField(max_length=128, default="1")
     #masters = models.BooleanField(default=False)
 
@@ -231,8 +232,7 @@ class Student(models.Model):
     agree = models.BooleanField(default=False)
     timestamp = models.DateField(auto_now=True, null=True, blank=True)
     school = models.ForeignKey(Department, on_delete=models.PROTECT, null=True, blank=True)
-    class Meta:
-        unique_together = ('student_id', 'programme')
+
 
 
     def __str__(self):
