@@ -209,13 +209,7 @@ class StudentAdmin(admin.ModelAdmin):
 
     actions= [export_student_as_csv]
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        profile = UserProfile.objects.get(user=request.user)
-        department = profile.department
-    
-
-        return qs.filter(school=department)
+   
 
     change_list_template = "projects/student_changelist.html"
 
