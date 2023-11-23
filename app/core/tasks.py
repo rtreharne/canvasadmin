@@ -1684,6 +1684,50 @@ def task_hide_totals(username, course_id):
         return "Totals hidden"
     else:
         return "Couldn't hide totals"
+    
+@shared_task
+def task_turn_on_late_policy(username, course_id):
+
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    course = Course.objects.get(course_id=course_id)
+
+    course_pattern = r'[A-Z]{4}\d{3}'
+
+    # Get first 3 digit number in course.name
+    course_code = find_first_match(course_pattern, course.course_code)
+    
+    late_submission_minimum_percent = '40'
+
+    print("course_code:", course_code, type(course_code))
+
+    # If course_code is string
+    if type(course_code) == str:
+        if course_code[4] == "7":
+            print("capping at 50")
+            late_submission_minimum_percent = '50'      
+            
+
+    url = API_URL + "/api/v1/courses/{}/late_policy".format(course_id)
+    payload = {
+        'late_policy[late_submission_deduction_enabled]': 'true',
+        'late_policy[late_submission_deduction]': '5',
+        'late_policy[late_submission_interval]': 'day',
+        'late_policy[late_submission_minimum_percent_enabled]': 'true',
+        'late_policy[late_submission_minimum_percent]': late_submission_minimum_percent,  
+    }
+
+    headers = {
+        'Authorization': 'Bearer ' + API_TOKEN,
+    }
+    response = requests.patch(
+        url = url,
+        data = payload,
+        headers = headers,
+    )
+    return "Done"
 
 
 

@@ -5,7 +5,7 @@ from canvasapi import Canvas
 from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
 from .tasks import *
 from django.contrib.admin import DateFieldListFilter
-from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course, task_assign_resit_course_to_courses, task_make_only_visible_to_overrides, task_create_assignment_summary, task_enroll_teachers_on_resit_course
+from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course, task_assign_resit_course_to_courses, task_make_only_visible_to_overrides, task_create_assignment_summary, task_enroll_teachers_on_resit_course, task_turn_on_late_policy
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
@@ -17,6 +17,7 @@ import csv
 from django.shortcuts import render, redirect
 from admin_confirm.admin import AdminConfirmMixin, confirm_action
 from .helpers import *
+
 
 class StaffAdmin(admin.ModelAdmin):
     list_display = ("name", "items_graded", "courses_graded_in",)
@@ -40,6 +41,7 @@ class CourseAdmin(admin.ModelAdmin):
     actions = ["admin_get_assignments_by_course",
                "admin_get_enrollments_by_course",
                 export_as_csv_action(),
+                "admin_turn_on_late_policy",
                 "organise_assignments",
                 "hide_totals",
                 "assign_resit_course",
@@ -96,6 +98,14 @@ class CourseAdmin(admin.ModelAdmin):
             course_ids = [x.course_id for x in queryset]
             task_get_enrollments_by_courses.delay(request.user.username, course_ids)
             messages.info(request, "Getting Enrollments! This action is not instantaneous. Please check back later.")
+
+    @admin.action(description="Turn on Late Policy")
+    def admin_turn_on_late_policy(modeladmin, request, queryset):
+        if request.user.is_staff:
+            course_ids = [x.course_id for x in queryset]
+            for course_id in course_ids:
+                task_turn_on_late_policy.delay(request.user.username, course_id)
+            messages.info(request, "Turning on late policy! This action is not instantaneous. Please check back later.")
 
     def assign_resit_course(self, request, queryset):
         print("Hi rob", request.POST)
