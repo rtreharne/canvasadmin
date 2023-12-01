@@ -85,6 +85,7 @@ def export_student_as_csv(modeladmin, request, queryset):
         'email',
         'programme',
         'masters_pathway?', 
+        'area',
         'prioritised_keywords', 
         'prioritised_types',
         'allocation_priority',
@@ -102,6 +103,7 @@ def export_student_as_csv(modeladmin, request, queryset):
             obj.first_name,
             obj.email,
             obj.programme,
+            obj.area,
             obj.masters_pathway,
             ', '.join(str(value) for value in [
                 obj.project_keyword_1,
