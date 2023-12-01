@@ -202,13 +202,14 @@ class ProjectKeywordAdmin(admin.ModelAdmin):
         )
 
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('student_id', 'last_name', 'first_name', 'email', 'timestamp')
+    list_display = ('student_id', 'last_name', 'first_name', 'email', 'timestamp', 'school')
     search_fields = ("student_id", "last_name", "first_name", "email")
-    list_filter = ("timestamp",)
-    list_per_page = 500
+    list_filter = ("school",)
+    list_per_page = 100
 
     actions= [export_student_as_csv]
 
+    """
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         profile = UserProfile.objects.get(user=request.user)
@@ -216,6 +217,7 @@ class StudentAdmin(admin.ModelAdmin):
     
 
         return qs.filter(school=department)
+    """
 
     change_list_template = "projects/student_changelist.html"
 
