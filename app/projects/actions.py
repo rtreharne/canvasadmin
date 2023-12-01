@@ -103,7 +103,6 @@ def export_student_as_csv(modeladmin, request, queryset):
             obj.first_name,
             obj.email,
             obj.programme,
-            obj.area,
             obj.masters_pathway,
             ', '.join(str(value) for value in [
                 obj.project_keyword_1,
@@ -112,6 +111,7 @@ def export_student_as_csv(modeladmin, request, queryset):
                 obj.project_keyword_4,
                 obj.project_keyword_5,
             ]),
+            obj.area.title,  # Fix: Remove .all() since it's not a ManyToManyField
             ', '.join(str(value) for value in [
                 obj.project_type_1,
                 obj.project_type_2,
@@ -121,7 +121,6 @@ def export_student_as_csv(modeladmin, request, queryset):
             ]),
             obj.priority,
             ', '.join(str(value) for value in obj.modules.all()),
-
         ]
 
         writer.writerow(row)
