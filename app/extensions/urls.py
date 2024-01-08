@@ -10,4 +10,5 @@ urlpatterns = [
     path('<int:student_id>/<int:course_canvas_id>/', views.assignment, name='assignment'),
     path('success/', views.success, name='success'),
     path('confirm/<uuid:confirmation_id>/', views.confirmation, name='confirmation'),
+    path('approve/<int:pk>/', views.approve, name='approve'),
 ]

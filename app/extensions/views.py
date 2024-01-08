@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseRedirect
 from .forms import StudentIdForm, CourseForm, AssignmentForm
 from django.urls import reverse
@@ -9,6 +9,9 @@ from .tasks import send_receipt, task_apply_override, send_approved
 from .models import Extension, Date
 from canvasapi import Canvas
 from core.tasks import task_get_submission
+from .models import Extension
+from .tasks import task_apply_override, task_apply_overrides
+
 
 # Create your views here.
 
@@ -242,3 +245,14 @@ def confirmation(request, confirmation_id):
 
 def success(request):
     return render(request, 'extensions/extensions_success.html')
+
+
+def approve(request, pk):
+    instance = get_object_or_404(Extension, pk=pk)
+
+    if request.user.is_staff:
+
+        extension_pks = [pk]
+        task_apply_overrides(request.user.username, extension_pks)
+
+    return redirect('admin:extensions_extension_change', instance.id)
