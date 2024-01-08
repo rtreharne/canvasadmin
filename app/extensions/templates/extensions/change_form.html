@@ -4,9 +4,11 @@
 
 {% block submit_buttons_bottom %}
     {% if not original.approved %}
+    
     <a href="{% url 'extensions:approve' original.pk %}" class="btn btn-danger form-control">Approve</a>
     <br>
     <br>
+ 
     {% endif %}
     {{ block.super }}
     

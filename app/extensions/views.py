@@ -218,7 +218,7 @@ def confirmation(request, confirmation_id):
             count = Extension.objects.filter(student=extension.student, extension_deadline__lte=date.finish, extension_deadline__gte=date.start, approved=True).exclude(late_ignore=True).count()
             print("Count:", count)
             count = 10
-            if count < 2:
+            if count < 2 or extension.late_ignore:
                 extension.approved = True
                 extension.approved_on = datetime.datetime.now()
                 extension.save()
@@ -255,4 +255,4 @@ def approve(request, pk):
         extension_pks = [pk]
         task_apply_overrides(request.user.username, extension_pks)
 
-    return redirect('admin:extensions_extension_change', instance.id)
+    #return redirect('admin:extensions_extension_change', instance.id)
