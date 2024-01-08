@@ -75,7 +75,7 @@ class AssignmentForm(forms.Form):
         self.root = root
         super(AssignmentForm, self).__init__(*args, **kwargs)
 
-        assignments = [x.id for x in Assignment.objects.filter(course__course_id=course_canvas_id, active=True) if x.due_at]
+        assignments = [x.id for x in Assignment.objects.filter(course__course_id=course_canvas_id, active=True, quiz=False) if x.due_at]
         queryset = Assignment.objects.filter(pk__in=assignments)
         if root=='elp':
             choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__lte=datetime.datetime.now()) if datetime.datetime.now() < (assignment.due_at.replace(tzinfo=None) + datetime.timedelta(weeks=2))]
