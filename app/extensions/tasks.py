@@ -41,11 +41,14 @@ def task_create_extension(row):
         except:
             print("not created")
     else:
-        sub_assignments = Assignment.objects.filter(assignment_name__contains=row["assignment_name"])
-        for a in sub_assignments:
-            new_row = row.copy()
-            new_row["assignment_id"] = a.assignment_id
-            task_create_extension(new_row)
+        try:
+            sub_assignments = Assignment.objects.filter(assignment_name__contains=row["assignment_name"])
+            for a in sub_assignments:
+                new_row = row.copy()
+                new_row["assignment_id"] = a.assignment_id
+                task_create_extension(new_row)
+        except:
+            print("not created")
             
 
 @shared_task

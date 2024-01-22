@@ -90,6 +90,10 @@ class ExtensionAdmin(admin.ModelAdmin):
             headers = data[0]
             data = data[1:]
 
+            # remove blank rows (might contain "," only)
+            data = [x for x in data if x != []]
+
+
             rows = []
 
             for row in data:
