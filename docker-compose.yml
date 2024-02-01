@@ -8,6 +8,7 @@ services:
       - POSTGRES_DB=dbname
       - POSTGRES_USER=rootuser
       - POSTGRES_PASSWORD=changeme
+    container_name: dblens
 
   app:
     build:
@@ -31,12 +32,12 @@ services:
     depends_on:
       - db
       - redis
-    container_name: app
+    container_name: applens
   
   # Redis
   redis:
     image: redis:alpine
-    container_name: redis
+    container_name: redislens
     environment:
       - SECRET_KEY=${SECRET_KEY}    
 
@@ -49,7 +50,7 @@ services:
       sh -c "celery -A app worker -l INFO"
     volumes:
       - ./app:/app
-    container_name: celery
+    container_name: celerylens
     environment:
       - SECRET_KEY=changeme
       - DEBUG=1
@@ -66,7 +67,7 @@ services:
   celery-beat:
     build:
       context: .
-    container_name: celery-beat
+    container_name: celery-beatlens
     restart: always  # Corrected placement
     command: celery -A celery beat -l info
     volumes:

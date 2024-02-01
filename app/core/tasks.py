@@ -664,6 +664,7 @@ def task_get_submission(username, assignment_id):
                                 print("SpLD message added (on most recent submission)")
                     except:
                         print("submission not added")
+            
 
 
 @shared_task()
@@ -688,12 +689,44 @@ def update_submissions(username, submission_ids):
         
 
         try:
-            canvas_submission = canvas.get_course(sub.assignment.course.course_id).get_assignment(sub.assignment.assignment_id).get_submission(sub.student.canvas_id, include=["user", "submission_comments", "full_rubric_assignment", "submission_history"])
+            canvas_submission = canvas.get_course(sub.assignment.course.course_id).get_assignment(sub.assignment.assignment_id).get_submission(sub.student.canvas_id, include=["user", "submission_comments", "full_rubric_assessment", "submission_history"])
         except:
             print("couldn't get canvas submission")
             continue
-        
 
+        if sub.submitted_at != None:
+
+            # look for category concerns
+            concerns = {
+                "category a": "A",
+                "category b": "B",
+                "category c": "C, D or E"
+            }
+
+            integrity_flag = None      
+                      
+            for key in concerns:
+                rubric_data = canvas_submission.full_rubric_assessment["data"]
+                for item in rubric_data:
+                    if key in item['description'].lower():
+                        integrity_flag = concerns[key]
+            
+            if sub.integrity_concern != integrity_flag:
+                print("updating integrity flag")
+                SubmissionLog(
+                            student=sub.student,
+                            submission=sub.assignment,
+                            course=sub.assignment.course.course_code,
+                            request="UPDATE",
+                            field="integrity_flag",
+                            from_value=str(sub.integrity_concern),
+                            to_value=str(integrity_flag),
+                            department=user.department
+                            ).save()
+                sub.integrity_concern = integrity_flag
+                sub.save()
+     
+        
         if sub.student.sis_user_id == None:
 
             try:
