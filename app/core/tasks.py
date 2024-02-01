@@ -704,27 +704,30 @@ def update_submissions(username, submission_ids):
             }
 
             integrity_flag = None      
-                      
-            for key in concerns:
-                rubric_data = canvas_submission.full_rubric_assessment["data"]
-                for item in rubric_data:
-                    if key in item['description'].lower():
-                        integrity_flag = concerns[key]
             
-            if sub.integrity_concern != integrity_flag:
-                print("updating integrity flag")
-                SubmissionLog(
-                            student=sub.student,
-                            submission=sub.assignment,
-                            course=sub.assignment.course.course_code,
-                            request="UPDATE",
-                            field="integrity_flag",
-                            from_value=str(sub.integrity_concern),
-                            to_value=str(integrity_flag),
-                            department=user.department
-                            ).save()
-                sub.integrity_concern = integrity_flag
-                sub.save()
+            try:
+                for key in concerns:
+                    rubric_data = canvas_submission.full_rubric_assessment["data"]
+                    for item in rubric_data:
+                        if key in item['description'].lower():
+                            integrity_flag = concerns[key]
+                
+                if sub.integrity_concern != integrity_flag:
+                    print("updating integrity flag")
+                    SubmissionLog(
+                                student=sub.student,
+                                submission=sub.assignment,
+                                course=sub.assignment.course.course_code,
+                                request="UPDATE",
+                                field="integrity_flag",
+                                from_value=str(sub.integrity_concern),
+                                to_value=str(integrity_flag),
+                                department=user.department
+                                ).save()
+                    sub.integrity_concern = integrity_flag
+                    sub.save()
+            except:
+                continue
      
         
         if sub.student.sis_user_id == None:
