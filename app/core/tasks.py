@@ -325,8 +325,9 @@ def update_assignments(username, assignment_ids):
             submissions = Submission.objects.filter(assignment=assignment)
             scores = [x.score for x in submissions if x.score != None]
             average_score = sum(scores)/len(scores)
+            print("POINTS POSSIBLE", assignment.points_possible)
             if assignment.points_possible != None:
-                assignment.average_score = round(100*average_score/assignment.points_possible, 1)
+                assignment.average_score = round(100*(average_score/assignment.points_possible), 1)
             else:
                 assignment.average_score = round(average_score, 1)
 
@@ -373,9 +374,13 @@ def update_assignments(username, assignment_ids):
                     if key == "due_at":
                         if canvas_assignment.has_overrides:
                             canvas_assignment = canvas.get_course(a.course.course_id).get_assignment(a.assignment_id, all_dates=True)
-                            for item in canvas_assignment.all_dates:
-                                if 'base' in item and item['base']:
-                                    datetime = is_datetime(item['due_at'])
+                            try:
+                                for item in canvas_assignment.all_dates:
+                                    if 'base' in item and item['base']:
+                                        datetime = is_datetime(item['due_at'])
+                            except:
+                                print(canvas_assignment.__dict__)
+                                pass
                         
                     if len(str(a.__dict__[key])) <1:
                         pass
