@@ -1042,7 +1042,7 @@ def task_apply_cat_cs(username, submission_pks):
         task_apply_cat_c(username, submission_pk)
     return "Done"
 
-def task_apply_cat_b(username, submission_pk):
+def task_apply_cat_c(username, submission_pk):
     user = UserProfile.objects.get(user__username=username)
     API_URL = user.department.CANVAS_API_URL
     API_TOKEN = user.department.CANVAS_API_TOKEN
