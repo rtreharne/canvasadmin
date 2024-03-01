@@ -21,8 +21,8 @@ class ExtensionAdmin(admin.ModelAdmin):
         "original_deadline",
         "extension_deadline",
         "approved",
+        "status",
         "approved_by",
-        "confirmed",
         "evidence",
         "submitted_at",
     )
@@ -31,11 +31,14 @@ class ExtensionAdmin(admin.ModelAdmin):
         "student",
         "assignment",
         "extension_type",
-        "approved",
+        "status",
         "course",
         DateFilter
         
     )
+
+    # make field "status" read only
+    readonly_fields = ("status", "submitted_at")
 
     """
     def get_queryset(self, request):

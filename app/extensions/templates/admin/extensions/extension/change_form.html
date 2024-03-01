@@ -1,0 +1,19 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+
+{% block submit_buttons_bottom %}
+    
+        {% if original.status == 'PENDING' %}
+        <div class="form-group">
+            <a href="{% url 'extensions:approve' original.pk %}" class="btn btn-success form-control">Approve</a>
+        </div>
+        <div class="form-group">
+            <a href="{% url 'extensions:reject' original.pk %}" class="btn btn-danger form-control">Reject</a>
+        </div>
+        <br>
+        <br>
+        {% endif %}
+
+    {{ block.super }}
+{% endblock %}

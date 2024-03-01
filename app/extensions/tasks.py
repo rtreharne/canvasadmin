@@ -95,8 +95,8 @@ def send_receipt(extension, current_host, root):
     else:
         message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
 
-    message_html += "Please click the link below to confirm your request (you may need to copy and paste the link into your browser).\n\n"
-    message_html += "http://{}\n\n".format(confirmation_url)
+    #message_html += "Please click the link below to confirm your request (you may need to copy and paste the link into your browser).\n\n"
+    #message_html += "http://{}\n\n".format(confirmation_url)
 
     if label == 'extension':
         message_html += "If you have any questions then please don't hesitate to contact us.\n\n"
@@ -246,6 +246,7 @@ def task_apply_override(username, extension_pk, root):
 
 
     extension.approved = True
+    extension.status = 'APPROVED'
     extension.approved_by = user
     extension.approved_on = datetime.now()
     extension.save()

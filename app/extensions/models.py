@@ -62,6 +62,17 @@ class Extension(models.Model):
     confirmation_id = models.UUIDField(default=uuid.uuid4, editable=False, null=True, blank=True)
     confirmed = models.BooleanField(default=False)
     submitted_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    status_choices = (
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected')
+    )
+
+    status = models.CharField(max_length=128, choices=status_choices, default='PENDING')
+    reject_reason = models.TextField(null=True, blank=True)
+    
+
+    
 
 
 

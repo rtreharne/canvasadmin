@@ -5,12 +5,13 @@ from django.urls import reverse
 from core.models import Assignment, Student, Course, Submission
 from extensions.models import Extension
 import datetime
-from .tasks import send_receipt, task_apply_override, send_approved
+from .tasks import send_receipt, task_apply_override, send_approved, task_apply_overrides
 from .models import Extension, Date
 from canvasapi import Canvas
 from core.tasks import task_get_submission
 from .models import Extension
-from .tasks import task_apply_override, task_apply_overrides
+from django.contrib import messages
+
 
 
 # Create your views here.
@@ -255,4 +256,23 @@ def approve(request, pk):
         extension_pks = [pk]
         task_apply_overrides(request.user.username, extension_pks)
 
-    #return redirect('admin:extensions_extension_change', instance.id)
+    return redirect('admin:extensions_extension_change', instance.id)
+
+def reject(request, pk):
+    instance = get_object_or_404(Extension, pk=pk)
+
+    if request.method == 'POST':
+        print("I'm posting")
+
+
+    if request.user.is_staff:
+        if not instance.reject_reason:
+            messages.error(request, 'You must complete the Reject Reason box first, and click save.')
+            return redirect('admin:extensions_extension_change', instance.id)
+            
+        else:
+            instance.status = 'REJECTED'
+            instance.approver = request.user
+            instance.save()
+
+    return redirect('admin:extensions_extension_change', instance.id)
