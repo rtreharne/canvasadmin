@@ -10,6 +10,7 @@ from accounts.models import UserProfile
 from django.utils.html import format_html
 from django.contrib import messages
 from .filters import DateFilter
+from django.http import HttpResponseRedirect
 
 class ExtensionAdmin(admin.ModelAdmin):
     list_display = (
@@ -25,6 +26,7 @@ class ExtensionAdmin(admin.ModelAdmin):
         "approved_by",
         "evidence",
         "submitted_at",
+        "updated_at"
     )
 
     list_filter = (
@@ -50,6 +52,8 @@ class ExtensionAdmin(admin.ModelAdmin):
     change_list_template = "extensions/extensions_changelist.html"
 
     actions = [export_as_csv_action(), "apply_overrides"]
+
+    
 
     def assignment_link(self, obj):
         return format_html('<a href="{}" target="_blank">{}</a>'.format(obj.assignment.url, obj.assignment.assignment_name))
@@ -115,6 +119,11 @@ class ExtensionAdmin(admin.ModelAdmin):
             request, "extensions/csv_form.html", payload
         )
     
+    def response_change(self, request, obj):
+        if "_save" in request.POST:
+            return HttpResponseRedirect(request.path)
+        return super().response_change(request, obj)
+    
     @admin.action(description="Approve and apply overrides to selected")
     def apply_overrides(modeladmin, request, queryset):
         if request.user.is_staff:
@@ -123,6 +132,9 @@ class ExtensionAdmin(admin.ModelAdmin):
             task_apply_overrides.delay(request.user.username, extension_pks)
 
             messages.info(request, "Your overrides are being created in Canvas. Check back later to confirm success.")
+
+            # Update "updated_at" field
+            queryset.update()
 
         
 

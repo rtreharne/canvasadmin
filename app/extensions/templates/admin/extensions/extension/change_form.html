@@ -8,12 +8,17 @@
         <div class="form-group">
             <a href="{% url 'extensions:approve' original.pk %}" class="btn btn-success form-control">Approve</a>
         </div>
-        <div class="form-group">
-            <a href="{% url 'extensions:reject' original.pk %}" class="btn btn-danger form-control">Reject</a>
-        </div>
+            {% if original.reject_reason != None %}
+            <div class="form-group">
+                <a href="{% url 'extensions:reject' original.pk %}" class="btn btn-danger form-control">Reject</a>
+            </div>
+            {% endif %}
         <br>
         <br>
         {% endif %}
+        <div class="form-group">
+            <a href="/admin/extensions/extension" class="btn btn-primary form-control">Back</a>
+        </div>
 
     {{ block.super }}
 {% endblock %}

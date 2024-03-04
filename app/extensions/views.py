@@ -5,7 +5,7 @@ from django.urls import reverse
 from core.models import Assignment, Student, Course, Submission
 from extensions.models import Extension
 import datetime
-from .tasks import send_receipt, task_apply_override, send_approved, task_apply_overrides
+from .tasks import send_receipt, task_apply_override, send_approved, task_apply_overrides, task_reject
 from .models import Extension, Date
 from canvasapi import Canvas
 from core.tasks import task_get_submission
@@ -267,12 +267,15 @@ def reject(request, pk):
 
     if request.user.is_staff:
         if not instance.reject_reason:
+
+
             messages.error(request, 'You must complete the Reject Reason box first, and click save.')
             return redirect('admin:extensions_extension_change', instance.id)
             
         else:
             instance.status = 'REJECTED'
-            instance.approver = request.user
+            instance.approver = request.user.username
             instance.save()
+            task_reject(request.user.username, instance.id) # don't delay
 
     return redirect('admin:extensions_extension_change', instance.id)

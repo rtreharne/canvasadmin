@@ -70,6 +70,7 @@ class Extension(models.Model):
 
     status = models.CharField(max_length=128, choices=status_choices, default='PENDING')
     reject_reason = models.TextField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     
 
     

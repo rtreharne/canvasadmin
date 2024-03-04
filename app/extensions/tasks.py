@@ -123,7 +123,15 @@ def send_receipt(extension, current_host, root):
         return None
     
 @shared_task
-def send_approved(extension, root):
+def task_reject(username, extansion_id):
+    extension = Extension.objects.get(pk=extansion_id)
+    extension.status = 'REJECTED'
+    extension.approved_by = UserProfile.objects.get(user__username=username)
+    extension.save()
+    send_approved(extension, extension.extension_type, reject=True)
+    
+@shared_task
+def send_approved(extension, root, reject=False):
     department = extension.assignment.course.course_department
     API_URL = department.CANVAS_API_URL
     API_TOKEN = department.CANVAS_API_TOKEN
@@ -153,40 +161,59 @@ def send_approved(extension, root):
 
     message_html = ""
     message_html += "Dear {},\n\n".format(extension.student.sortable_name.split(",")[1].strip())
-    message_html += "Your request for an {} has been approved.\n\n".format(label)
+
+    if reject:
+        message_html += "Your request for an {} has been rejected.\n\n".format(label)
+    else:
+        message_html += "Your request for an {} has been approved.\n\n".format(label)
+    
     message_html += "Course: {}\n\n".format(course_name)
     message_html += "Assignment: {}\n\n".format(assignment_name)
-    message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-    if label == 'extension':
-        message_html += "Date of Extension: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-    else:
-        message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+
+    if reject:
+        message_html += "Reason for rejection: {}\n\n".format(extension.reject_reason)
     
-
-
-    if label == 'extension':
-        message_html += "Please ensure you submit by the new deadline to avoid incurring any penalites.\n\n"
-        message_html += "Any submissions made up to the above date will not be subject to penatly. This will be reflected in your Canvas makrs, however please remember Canvas marks are provisional as all marks are subject to ratification by the Board of Examiners.\n\n"
-        message_html += "Please keep this message safe as your confirmation of an accepted extension application for this assignment.\n\n"
-        message_html += "If you have any questions then please don't hesitate to contact us.\n\n"
-        message_html += "SLS Disability Support Team"
-    if root == 'elp':
-        message_html += "This assignment will not be subject to penalties and your original mark will be reinstated in Canvas in due course.\n\n"
-        message_html += "Please note that all assessment marks are provisional until they are ratified by the Board of Examiners.\n\n"
-        message_html += "Please keep this message safe as your confirmation of an accepted extension application for this assignment.\n\n"
-        message_html += "If you have any questions then please don't hesitate to contact the School Assessment team at sls-assessment@liverpool.ac.uk.\n\n"
-
+    """
+    else:
+        message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+        if label == 'extension':
+            message_html += "Date of Extension: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+        else:
+            message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    """
         
+
+    if not reject:
+        if label == 'extension':
+            message_html += "You will receive confimation of the decision in due course. Please ensure you check you Canvas inbox for further messages.\n\n"
+            message_html += "If you did not make this request of feel you are receiving this message in error then please do get in touch.\n\n"
+            message_html += "If you have any questions then please don't hesitate to contactu us at slsdds@liverpool.ac.uk.\n\n"
+            message_html += "SLS Disability Support Team"
+        if root == 'elp':
+            message_html += "You will receive confimation of the decision in due course. Please ensure you check you Canvas inbox for further messages.\n\n"
+            message_html += "If you did not make this request of feel you are receiving this message in error then please do get in touch.\n\n"
+            message_html += "If you have any questions then please don't hesitate to contactu us at sls-assessment@liverpool.ac.uk.\n\n"
+            message_html += "SLS Assessment Team"    
+    else:
+            message_html += "If you have any questions then please don't hesitate to contactu us at sls-assessment@liverpool.ac.uk.\n\n"
+            message_html += "SLS Assessment Team"    
+
+            
 
     # create Canvas conversation
     try:
+        if reject:
+                subject="Application for {} rejected".format(label)
+        else:
+            subject="Application for {} approved".format(label)
+
         conversation = canvas.create_conversation(
-            recipients=[extension.student.canvas_id],
-            subject="Application for {} approved".format(label),
-            body=message_html,
-            scope="unread",
-            context_code="course_{}".format(extension.assignment.course.course_id),
-            force_new = True
+        recipients=[extension.student.canvas_id],
+        subject=subject,
+        body=message_html,
+        scope="unread",
+        context_code="course_{}".format(extension.assignment.course.course_id),
+        force_new = True
         )
         return conversation
     except:
@@ -240,7 +267,8 @@ def task_apply_override(username, extension_pk, root):
     assignment.create_override(
         assignment_override={
             "student_ids": [extension.student.canvas_id],
-            "due_at": datetime_to_json(extension.extension_deadline)
+            "due_at": datetime_to_json(extension.extension_deadline),
+            "lock_at": datetime_to_json(extension.assignment.due_at + timedelta(days=7))
         }
     )
 
@@ -249,11 +277,12 @@ def task_apply_override(username, extension_pk, root):
     extension.status = 'APPROVED'
     extension.approved_by = user
     extension.approved_on = datetime.now()
+    extension.updated_at = datetime.now()
     extension.save()
 
     # Send approval email
 
-    conversation = send_approved(extension, root)
+    conversation = send_approved(extension, root, reject=False)
 
     #except:
         #print("override not created!")
