@@ -195,7 +195,7 @@ def send_approved(extension, root, reject=False):
             message_html += "If you have any questions then please don't hesitate to contact us at sls-assessment@liverpool.ac.uk.\n\n"
             message_html += "SLS Assessment Team"    
     else:
-            message_html += "If you have any questions then please don't hesitate to contactu us at sls-assessment@liverpool.ac.uk.\n\n"
+            message_html += "If you have any questions then please don't hesitate to contact us at sls-assessment@liverpool.ac.uk.\n\n"
             message_html += "SLS Assessment Team"    
 
             
