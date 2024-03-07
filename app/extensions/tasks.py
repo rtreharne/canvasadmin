@@ -112,7 +112,7 @@ def send_receipt(extension, current_host, root):
     try:
         conversation = canvas.create_conversation(
             recipients=[extension.student.canvas_id],
-            subject="Application for {} confirmation".format(label),
+            subject="Application for {} received".format(label),
             body=message_html,
             scope="unread",
             context_code="course_{}".format(extension.assignment.course.course_id),
@@ -185,12 +185,12 @@ def send_approved(extension, root, reject=False):
 
     if not reject:
         if label == 'extension':
-            message_html += "You will receive confimation of the decision in due course. Please ensure you check you Canvas inbox for further messages.\n\n"
+            #message_html += "You will receive confimation of the decision in due course. Please ensure you check you Canvas inbox for further messages.\n\n"
             message_html += "If you did not make this request of feel you are receiving this message in error then please do get in touch.\n\n"
             message_html += "If you have any questions then please don't hesitate to contact us at slsdds@liverpool.ac.uk.\n\n"
             message_html += "SLS Disability Support Team"
         if root == 'elp':
-            message_html += "You will receive confimation of the decision in due course. Please ensure you check you Canvas inbox for further messages.\n\n"
+            #message_html += "You will receive confimation of the decision in due course. Please ensure you check you Canvas inbox for further messages.\n\n"
             message_html += "If you did not make this request of feel you are receiving this message in error then please do get in touch.\n\n"
             message_html += "If you have any questions then please don't hesitate to contact us at sls-assessment@liverpool.ac.uk.\n\n"
             message_html += "SLS Assessment Team"    
