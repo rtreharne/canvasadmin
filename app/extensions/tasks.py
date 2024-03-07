@@ -89,20 +89,24 @@ def send_receipt(extension, current_host, root):
     message_html += "Your request for an {} has been received and is being processed.\n\n".format(label)
     message_html += "Course: {}\n\n".format(course_name)
     message_html += "Assignment: {}\n\n".format(assignment_name)
-    message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-    if label == 'extension':
-        message_html += "Date of Extension: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-    else:
+    #message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    if label == "elp":
         message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
 
     #message_html += "Please click the link below to confirm your request (you may need to copy and paste the link into your browser).\n\n"
     #message_html += "http://{}\n\n".format(confirmation_url)
-
+        
     if label == 'extension':
-        message_html += "If you have any questions then please don't hesitate to contact us.\n\n"
+        #message_html += "You will receive confimation of the decision in due course. Please ensure you check you Canvas inbox for further messages.\n\n"
+        message_html += "If you did not make this request or feel you are receiving this message in error then please do get in touch.\n\n"
+        message_html += "If you have any questions then please don't hesitate to contact us at slsdds@liverpool.ac.uk.\n\n"
         message_html += "SLS Disability Support Team"
     if root == 'elp':
-        message_html += "If you have any questions then please don't hesitate to contact the School Assessment team at sls-assessment@liverpool.ac.uk.\n\n"
+        #message_html += "You will receive confimation of the decision in due course. Please ensure you check you Canvas inbox for further messages.\n\n"
+        message_html += "If you did not make this request or feel you are receiving this message in error then please do get in touch.\n\n"
+        message_html += "If you have any questions then please don't hesitate to contact us at sls-assessment@liverpool.ac.uk.\n\n"
+        message_html += "SLS Assessment Team"  
+
 
     
 
@@ -173,30 +177,32 @@ def send_approved(extension, root, reject=False):
     if reject:
         message_html += "Reason for rejection: {}\n\n".format(extension.reject_reason)
     
-    """
-    else:
-        message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-        if label == 'extension':
-            message_html += "Date of Extension: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-        else:
-            message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-    """
+    
+    message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    if label == 'extension':
         
+        message_html += "Extended deadline: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+        message_html += """Please ensure you submit by the new deadline to avoid incurring any penalites.
 
-    if not reject:
-        if label == 'extension':
-            #message_html += "You will receive confimation of the decision in due course. Please ensure you check you Canvas inbox for further messages.\n\n"
-            message_html += "If you did not make this request of feel you are receiving this message in error then please do get in touch.\n\n"
-            message_html += "If you have any questions then please don't hesitate to contact us at slsdds@liverpool.ac.uk.\n\n"
-            message_html += "SLS Disability Support Team"
-        if root == 'elp':
-            #message_html += "You will receive confimation of the decision in due course. Please ensure you check you Canvas inbox for further messages.\n\n"
-            message_html += "If you did not make this request of feel you are receiving this message in error then please do get in touch.\n\n"
-            message_html += "If you have any questions then please don't hesitate to contact us at sls-assessment@liverpool.ac.uk.\n\n"
-            message_html += "SLS Assessment Team"    
-    else:
-            message_html += "If you have any questions then please don't hesitate to contact us at sls-assessment@liverpool.ac.uk.\n\n"
-            message_html += "SLS Assessment Team"    
+            Any submissions made up to the above date will not be subject to penalty. This will be reflected in your Canvas marks, however please remember Canvas marks are provisional as all marks are subject to ratification by the Board of Examiners.
+
+            Please keep this message safe as your confirmation of an accepted extension application for this assignment.
+
+        """
+        message_html += "If you have any questions then please don't hesitate to contact us at slsdds@liverpool.ac.uk.\n\n"
+        message_html += "SLS Disability Support Team"
+    elif root == 'elp':
+        message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+        message_html += """This assignment will not be subject to penalties and your original mark will be reinstated in Canvas in due course.
+
+            Please note that all assessment marks are provisional until they are ratified by the Board of Examiners.
+
+            Please keep this message safe as your confirmation of an accepted application for this assignment.
+            
+        """
+        message_html += "If you have any questions then please don't hesitate to contact us at sls-assessment@liverpool.ac.uk.\n\n"
+        message_html += "SLS Assessment Team"    
+ 
 
             
 
@@ -268,7 +274,7 @@ def task_apply_override(username, extension_pk, root):
         assignment_override={
             "student_ids": [extension.student.canvas_id],
             "due_at": datetime_to_json(extension.extension_deadline),
-            "lock_at": datetime_to_json(extension.assignment.due_at + timedelta(days=7))
+            "lock_at": datetime_to_json(extension.assignment.due_at + timedelta(days=7, minutes=5))
         }
     )
 
