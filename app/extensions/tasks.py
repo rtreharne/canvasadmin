@@ -176,30 +176,31 @@ def send_approved(extension, root, reject=False):
 
     if reject:
         message_html += "Reason for rejection: {}\n\n".format(extension.reject_reason)
-    
-    
-    message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+    else:
+        message_html += "Original deadline: {}\n\n".format(original_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+
     if label == 'extension':
-        
-        message_html += "Extended deadline: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-        message_html += """Please ensure you submit by the new deadline to avoid incurring any penalites.
+        if not reject:
+            message_html += "Extended deadline: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+            message_html += """Please ensure you submit by the new deadline to avoid incurring any penalites.
 
-            Any submissions made up to the above date will not be subject to penalty. This will be reflected in your Canvas marks, however please remember Canvas marks are provisional as all marks are subject to ratification by the Board of Examiners.
+                Any submissions made up to the above date will not be subject to penalty. This will be reflected in your Canvas marks, however please remember Canvas marks are provisional as all marks are subject to ratification by the Board of Examiners.
 
-            Please keep this message safe as your confirmation of an accepted extension application for this assignment.
+                Please keep this message safe as your confirmation of an accepted extension application for this assignment.
 
-        """
+            """
         message_html += "If you have any questions then please don't hesitate to contact us at slsdds@liverpool.ac.uk.\n\n"
         message_html += "SLS Disability Support Team"
     elif root == 'elp':
-        message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
-        message_html += """This assignment will not be subject to penalties and your original mark will be reinstated in Canvas in due course.
+        if not reject:
+            message_html += "Date of late submission: {}\n\n".format(extension_deadline.strftime("%A, %B %d, %Y at %I:%M %p"))
+            message_html += """This assignment will not be subject to penalties and your original mark will be reinstated in Canvas in due course.
 
-            Please note that all assessment marks are provisional until they are ratified by the Board of Examiners.
+                Please note that all assessment marks are provisional until they are ratified by the Board of Examiners.
 
-            Please keep this message safe as your confirmation of an accepted application for this assignment.
-            
-        """
+                Please keep this message safe as your confirmation of an accepted application for this assignment.
+                
+            """
         message_html += "If you have any questions then please don't hesitate to contact us at sls-assessment@liverpool.ac.uk.\n\n"
         message_html += "SLS Assessment Team"    
  
