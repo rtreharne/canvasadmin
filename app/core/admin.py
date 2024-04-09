@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from accounts.models import User, UserProfile
 from canvasapi import Canvas
-from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date
+from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date, AssignmentType
 from .tasks import *
 from django.contrib.admin import DateFieldListFilter
 from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course, task_assign_resit_course_to_courses, task_make_only_visible_to_overrides, task_create_assignment_summary, task_enroll_teachers_on_resit_course, task_turn_on_late_policy
@@ -17,6 +17,14 @@ import csv
 from django.shortcuts import render, redirect
 from admin_confirm.admin import AdminConfirmMixin, confirm_action
 from .helpers import *
+from django import forms
+from .actions import export_submission_as_csv
+
+class AssignmentTypeAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    list_filter = ("name",)
+
+admin.site.register(AssignmentType, AssignmentTypeAdmin)
 
 
 class StaffAdmin(admin.ModelAdmin):
@@ -327,6 +335,7 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
                  ScoreFilter,
                  SecondsLateFilter,
                  IntegrityConcernFilter,
+                 "assignment__assignment_type"
                  )
 
     search_fields = (
@@ -334,7 +343,7 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
     )
 
     actions = ["sync_submissions", "apply_zero_scores", "apply_cat_b", "apply_cat_c", 
-               export_as_csv_action(), "award_five_min_extensions"]
+               export_submission_as_csv, "award_five_min_extensions"]
 
     change_list_template = "core/submissions_changelist.html"
 
@@ -522,8 +531,20 @@ class GradedFilter(admin.SimpleListFilter):
             return queryset.filter(pc_graded=0).exclude(pc_graded=None)
         #return queryset
 
+class AssignmentForm(forms.ModelForm):
+    assignment_type = forms.ModelChoiceField(queryset=AssignmentType.objects.all(), required=False)
+
+    class Meta:
+        model = Assignment
+        fields = "__all__"
+
 
 class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
+    class Media:
+        css = {
+            'all': ('css/admin.css',)  # Include the path to your CSS file.
+        }
+
     list_display = (
         "assignment_link",
         #"assignment_name",
@@ -536,7 +557,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
         "published",
         "active",
         "quiz",
-        "previous_deadline",
+        "assignment_type",
     )
 
     #list_filter = ('')
@@ -560,7 +581,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
                "find_last_term_assignment",
                ]
 
-    list_editable = ('active', 'quiz')
+    list_editable = ('active', 'quiz', 'assignment_type')
 
     search_fields = ('assignment_name', 'course__course_code')
 
@@ -574,7 +595,8 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
                    AssignmentDateFilter,
                    'has_overrides',
                    'anonymous_grading',
-                   PreviousDateFilter)
+                   PreviousDateFilter,
+                   'assignment_type')
     
     def get_urls(self):
         urls = super().get_urls()

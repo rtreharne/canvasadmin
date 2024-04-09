@@ -4,6 +4,12 @@ from accounts.models import Department
 class Sample(models.Model):
     attachment = models.FileField()
 
+class AssignmentType(models.Model):
+    name = models.CharField(max_length=128)
+
+    def __str__(self):
+        return self.name
+
 class Course(models.Model):
     course_code = models.CharField(max_length=128, unique=True)
     course_id = models.IntegerField(null=True, blank=True, unique=True)
@@ -14,6 +20,7 @@ class Course(models.Model):
         
     def __str__(self):
         return self.course_code
+    
     
 class Assignment(models.Model):
     department = models.ForeignKey(Department, null=True, blank=True, on_delete=models.PROTECT)
@@ -41,6 +48,7 @@ class Assignment(models.Model):
     posted_at = models.DateTimeField(null=True, blank=True)
     rollover_to_course = models.ForeignKey(Course, null=True, blank=True, on_delete=models.PROTECT, related_name="rollover_to_course")
     previous_term_assignment = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
+    assignment_type = models.ForeignKey(AssignmentType, null=True, blank=True, on_delete=models.PROTECT)
 
     def __str__(self):
         return self.assignment_name

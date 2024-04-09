@@ -1,6 +1,6 @@
 from django.contrib import admin
 from datetime import datetime, timedelta
-from .models import Date
+from .models import Date, AssignmentType
 
 def find_term_start_date(year):
     d = datetime(year, 1, 7)
@@ -12,6 +12,25 @@ def find_term_start_date(year):
         term_start = start_year - timedelta(days=(14*7))
 
     return term_start
+
+class AssignmentTypeFilter(admin.SimpleListFilter):
+    title = 'Assignment Type'
+    parameter_name = 'assignment_type'
+
+    def lookups(self, request, model_admin):
+        try:
+            filter_tuple = ((x, x) for x in AssignmentType.objects.all().order_by('label'))
+            return filter_tuple
+        except:
+            return ()
+
+    def queryset(self, request, queryset):
+        value = self.value()
+
+        if value:
+            return queryset.filter(assignment_type=value)
+
+        return queryset
 
 class AssignmentDateFilter(admin.SimpleListFilter):
     title = 'Deadline Filter'
