@@ -225,6 +225,11 @@ def get_assignments_by_course(username, course_id):
             pc_graded = None
 
         try:
+            rubric_title = f"{assignment.rubric_settings['title']} - {assignment.rubric_settings['id']}"
+        except:
+            rubric_title = None
+
+        try:
             Assignment(
                 department = user.department,
                 assignment_name = assignment.name[:128],
@@ -243,6 +248,7 @@ def get_assignments_by_course(username, course_id):
                 pc_graded = pc_graded,
                 not_submitted = summary["not_submitted"],
                 quiz=quiz,
+                rubric_title = rubric_title
 
             ).save()
             print("Assignment saved")
@@ -351,7 +357,7 @@ def update_assignments(username, assignment_ids):
         "anonymous_grading": "anonymous_grading",
         "type": "submission_types",
         "has_overrides": "has_overrides",
-        "points_possible": "points_possible"
+        "points_possible": "points_possible",
     }
 
     for a in assignments:
@@ -364,6 +370,15 @@ def update_assignments(username, assignment_ids):
             assignment_found = False
 
         if assignment_found:
+
+            # try and update rubric_title (lazy)
+            try:
+                rubric_title = f"{canvas_assignment.rubric_settings['title']} - {canvas_assignment.rubric_settings['id']}"
+            except:
+                rubric_title = None
+
+            a.rubric_title = rubric_title
+
             for key, value in app_canvas_mapp.items(): 
                 
 
@@ -444,7 +459,8 @@ def update_assignments(username, assignment_ids):
                                 setattr(log, "assignment", canvas_assignment.__dict__["name"])
                                 log.save()
                             pass
-                        
+
+
                         print(key, "updated")
                         AssignmentLog(
                             assignment=canvas_assignment.__dict__["name"][:120],
@@ -559,8 +575,15 @@ def task_get_submission(username, assignment_id):
                         "category b": "B",
                         "category c": "C, D or E"
                     }
+
+                    gai_declaration = {
+                        "did not use GAI": "Did not use GAI",
+                        "using GAI": "Using GAI",
+                        "did not include": "No declaration"
+                    }
                     
                     integrity_flag = None
+                    gai_flag = None
                     staff_exists = True
 
                     if sub.grader_id != None:
@@ -596,6 +619,15 @@ def task_get_submission(username, assignment_id):
                                     integrity_flag = concerns[key]
                     except:
                         integrity_flag = None
+
+                    try:
+                        for key in gai_declaration:
+                            rubric_data = sub.full_rubric_assessment["data"]
+                            for item in rubric_data:
+                                if key in item['description'].lower():
+                                    gai_flag = gai_declaration[key]
+                    except:
+                        continue
 
                     try:
                         score=float('{0:.2f}'.format(sub.score))
@@ -642,6 +674,7 @@ def task_get_submission(username, assignment_id):
                         course=assignment.course,
                         score=score,
                         integrity_concern = integrity_flag,
+                        gai_declaration = gai_flag,
                         posted_at = posted_at,
                         similarity_score = similarity_score,
                         turnitin_url = turnitin_url,
@@ -708,7 +741,14 @@ def update_submissions(username, submission_ids):
                 "category c": "C, D or E"
             }
 
-            integrity_flag = None      
+            gai_declaration = {
+                        "did not use GAI": "Did not use GAI",
+                        "using GAI": "Using GAI",
+                        "did not include": "No declaration"
+                    }
+
+            integrity_flag = None
+            gai_flag = None    
             
             try:
                 for key in concerns:
@@ -731,6 +771,18 @@ def update_submissions(username, submission_ids):
                                 ).save()
                     sub.integrity_concern = integrity_flag
                     sub.save()
+            except:
+                continue
+
+            try:
+                for key in gai_declaration:
+                    rubric_data = canvas_submission.full_rubric_assessment["data"]
+                    for item in rubric_data:
+                        if key in item['description'].lower():
+                            gai_flag = gai_declaration[key]
+                
+                sub.gai_declaration = gai_flag
+                sub.save()
             except:
                 continue
      

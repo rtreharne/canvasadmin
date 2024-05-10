@@ -17,6 +17,7 @@ class Course(models.Model):
     course_department = models.ForeignKey(Department, null=True, blank=True, on_delete=models.PROTECT)
     resit_course = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
     active = models.BooleanField(default=True, verbose_name="Active Flag")
+    programme = models.ManyToManyField('Programme', blank=True)
         
     def __str__(self):
         return self.course_code
@@ -49,6 +50,7 @@ class Assignment(models.Model):
     rollover_to_course = models.ForeignKey(Course, null=True, blank=True, on_delete=models.PROTECT, related_name="rollover_to_course")
     previous_term_assignment = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
     assignment_type = models.ForeignKey(AssignmentType, null=True, blank=True, on_delete=models.PROTECT)
+    rubric_title = models.CharField(max_length=128, null=True, blank=True)
 
     def __str__(self):
         return self.assignment_name
@@ -67,6 +69,7 @@ class Student(models.Model):
     canvas_id = models.IntegerField(unique=True)
     login_id = models.EmailField(null=True, blank=True)
     support_plan = models.BooleanField(default=False, verbose_name="SpLD")
+    repeating = models.BooleanField(default=False, verbose_name="Repeating")
     marker_message = models.TextField(null=True, blank=True)
     
     def __str__(self):
@@ -88,6 +91,7 @@ class Submission(models.Model):
     similarity_score = models.FloatField(null=True, blank=True)
     turnitin_url = models.URLField(null=True, blank=True)
     integrity_concern = models.CharField(max_length=128, null=True, blank=True, default=None, verbose_name="Integrity Flag")
+    gai_declaration = models.CharField(max_length=128, null=True, blank=True, default=None, verbose_name="GAI Declaration")
     html_url = models.URLField(null=True, blank=True)
     marker = models.CharField(max_length=256, null=True, blank=True)
     marker_email = models.EmailField(null=True, blank=True)

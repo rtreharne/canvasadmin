@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from accounts.models import User, UserProfile
 from canvasapi import Canvas
-from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date, AssignmentType
+from core.models import Sample, Course, Assignment, Student, Submission, Staff, Date, AssignmentType, Programme
 from .tasks import *
 from django.contrib.admin import DateFieldListFilter
 from .tasks import update_assignments, get_courses, task_update_assignment_deadlines, task_assign_markers, task_apply_zero_scores, task_award_five_min_extensions, task_copy_to_resit_course, task_assign_resit_course_to_courses, task_make_only_visible_to_overrides, task_create_assignment_summary, task_enroll_teachers_on_resit_course, task_turn_on_late_policy
@@ -174,13 +174,16 @@ class StudentAdmin(admin.ModelAdmin):
         "canvas_id",
         "login_id",
         "support_plan",
+        "repeating",
     )
 
     search_fields = (
         "sortable_name",
     )
 
-    list_editable= ("support_plan",)
+    list_editable= ("support_plan", "repeating",)
+
+    list_filter = ("support_plan", "repeating",)
 
     actions = [export_as_csv_action(),]
 
@@ -325,17 +328,21 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
         "days_late",
         "posted_at",
         "integrity_concern",
-        "similarity_link"
+        "similarity_link",
+        "gai_declaration",
     )
 
     list_filter=("assignment__course__course_code", 
                  "assignment__assignment_name",
                  "student__sortable_name",
+                 "student__repeating",
                  SubmissionDateFilter,
                  ScoreFilter,
                  SecondsLateFilter,
                  IntegrityConcernFilter,
-                 "assignment__assignment_type"
+                 "assignment__assignment_type",
+                 "assignment__course__programme",
+                 "gai_declaration",
                  )
 
     search_fields = (
@@ -531,6 +538,7 @@ class GradedFilter(admin.SimpleListFilter):
             return queryset.filter(pc_graded=0).exclude(pc_graded=None)
         #return queryset
 
+
 class AssignmentForm(forms.ModelForm):
     assignment_type = forms.ModelChoiceField(queryset=AssignmentType.objects.all(), required=False)
 
@@ -558,6 +566,7 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
         "active",
         "quiz",
         "assignment_type",
+        "rubric_title"
     )
 
     #list_filter = ('')
@@ -596,7 +605,9 @@ class AssignmentAdmin(AdminConfirmMixin, admin.ModelAdmin):
                    'has_overrides',
                    'anonymous_grading',
                    PreviousDateFilter,
-                   'assignment_type')
+                   'assignment_type',
+                   'course__programme',
+                   'rubric_title')
     
     def get_urls(self):
         urls = super().get_urls()
@@ -846,3 +857,4 @@ admin.site.register(Course, CourseAdmin)
 admin.site.register(Submission, SubmissionAdmin)
 admin.site.register(Student, StudentAdmin)
 admin.site.register(Date, DateAdmin)
+admin.site.register(Programme)
