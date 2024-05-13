@@ -561,9 +561,13 @@ def task_get_submission(username, assignment_id):
                     new_student.save()
 
         for sub in submissions:
+            
 
             # Does submission already exist?
             new_submission = Submission.objects.filter(submission_id=sub.id)
+
+            print("checking submissions", sub.user["sortable_name"], sub.submitted_at, len(new_submission))
+
 
             if len(new_submission) == 0:
 
@@ -627,7 +631,7 @@ def task_get_submission(username, assignment_id):
                                 if key in item['description'].lower():
                                     gai_flag = gai_declaration[key]
                     except:
-                        continue
+                        gai_flag = None
 
                     try:
                         score=float('{0:.2f}'.format(sub.score))
