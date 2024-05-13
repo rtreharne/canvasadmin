@@ -788,7 +788,7 @@ def update_submissions(username, submission_ids):
                 sub.gai_declaration = gai_flag
                 sub.save()
             except:
-                continue
+                sub.gai_declaration = None
      
         
         if sub.student.sis_user_id == None:
