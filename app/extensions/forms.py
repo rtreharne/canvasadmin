@@ -129,7 +129,7 @@ class AssignmentForm(forms.Form):
                 self.fields['confirm_self_certified'] = forms.BooleanField(
                     required=True,
                     label= "Confirmation",
-                    help_text="I understand that if I choose to submit this form without evidence my application will be considered as one of two self-certified ELPs available to me during this assessment period."
+                    help_text="I understand that if I choose to submit this form without evidence my application will be considered as one of two self-certified ELPs available to me during this academic year."
                     )
                 
     def clean(self):

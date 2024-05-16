@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='extension',
             name='confirm_self_certified',
-            field=models.BooleanField(default=False, verbose_name='I confirm I understand that if I choose to submit this form without evidence my application will be considered as one of two self-certified ELPs available to me during this assessment period.'),
+            field=models.BooleanField(default=False, verbose_name='I confirm I understand that if I choose to submit this form without evidence my application will be considered as one of two self-certified ELPs available to me during this academic year.'),
         ),
     ]
