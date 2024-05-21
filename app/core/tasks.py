@@ -566,7 +566,7 @@ def task_get_submission(username, assignment_id):
             # Does submission already exist?
             new_submission = Submission.objects.filter(submission_id=sub.id)
 
-            print("checking submissions", sub.user["sortable_name"], sub.submitted_at, len(new_submission))
+            print("checking submissions", sub.submitted_at, len(new_submission))
 
 
             if len(new_submission) == 0:
