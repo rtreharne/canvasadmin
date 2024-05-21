@@ -776,7 +776,7 @@ def update_submissions(username, submission_ids):
                     sub.integrity_concern = integrity_flag
                     sub.save()
             except:
-                continue
+                print("do nothing")
 
             try:
                 for key in gai_declaration:
