@@ -829,6 +829,16 @@ def update_submissions(username, submission_ids):
         else:
             graded_by = None
 
+        #check rubric 
+        try:
+
+            full_rubric =  canvas_submission.full_rubric_assessment
+            canvas_user = canvas.get_user(full_rubric['assessor_id'])
+            graded_by = canvas_user.sortable_name
+        except:
+            pass
+
+
         try:
             comments = canvas_submission.submission_comments
         except:
