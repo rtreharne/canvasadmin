@@ -197,29 +197,50 @@ class StudentAdmin(admin.ModelAdmin):
         return my_urls + urls
 
     def import_csv(self, request):
+
+        info = "Your csv file must have columns 'student_id' and 'message'."
         if request.method == "POST":
             file = request.FILES["csv_file"]
-
-            decoded_file = file.read().decode('utf-8').splitlines()
-            reader = csv.reader(decoded_file)
-
-            # get columns
-            columns = next(reader)
-
-            # format reader as list of dicts
-            data = []
-            [data.append({x: y for x, y in zip(columns, row)}) for row in reader]
-
-            for item in data:
-                print(item["student_id"], type(item["student_id"]))
+            form = CsvImportForm(request.POST, request.FILES)
+            if form.is_valid():
                 try:
-                    student = Student.objects.filter(sis_user_id__contains=str(item["student_id"]))[0]
-                    student.support_plan = True
-                    student.marker_message = item["message"]
-                    student.save()
-
+                    decoded_file = file.read().decode('utf-8').splitlines()
                 except:
-                    print("Student not found.")
+                    decoded_file = file.read().decode('utf-16').splitlines()
+                
+                reader = csv.reader(decoded_file)
+
+                # get columns
+                columns = next(reader)
+
+                # check that columns have "student_id" and "message" headers
+                if "student_id" not in columns or "message" not in columns:
+                    form.add_error(None, "Your csv file must have columns 'student_id' and 'message'.")
+                    return render(
+                        request, "csv_form.html", {"form": form, "info": info}
+                    )
+
+                # format reader as list of dicts
+                data = []
+                [data.append({x: y for x, y in zip(columns, row)}) for row in reader]
+
+                print("DATA", data)
+
+                for item in data:
+                    print(item["student_id"], type(item["student_id"]))
+                    try:
+                        student = Student.objects.filter(sis_user_id__contains=str(item["student_id"]))[0]
+                        student.support_plan = True
+                        student.marker_message = item["message"]
+                        student.save()
+
+                    except:
+                        print("Student not found.")
+            else:
+                print(form.errors)
+                return render(
+                    request, "csv_form.html", {"form": form, "info": info}
+                )
 
             
             self.message_user(request, "Your csv file has been imported. Your student records have been updated.")
@@ -227,6 +248,7 @@ class StudentAdmin(admin.ModelAdmin):
         
         form = CsvImportForm()
         payload = {"form": form}
+        payload["info"] = info
         return render(
             request, "csv_form.html", payload
         )
