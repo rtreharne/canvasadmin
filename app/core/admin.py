@@ -32,6 +32,8 @@ class StaffAdmin(admin.ModelAdmin):
 
     list_filter = ("name",)
 
+    actions = [export_as_csv_action(),]
+
 admin.site.register(Staff, StaffAdmin)
 
 
