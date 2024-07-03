@@ -509,6 +509,7 @@ def task_get_submissions(username, assignment_ids):
     for assignment_id in assignment_ids:
         task_get_submission(username, assignment_id)
 
+
 @shared_task()
 def task_get_submission(username, assignment_id):
     assignment = Assignment.objects.get(assignment_id=assignment_id)
@@ -735,6 +736,30 @@ def update_submissions(username, submission_ids):
         except:
             print("couldn't get canvas submission")
             continue
+
+        # SpLD comment update on most recent submission
+
+        if sub.student.support_plan:
+            # Get number of sub attempts
+            attempts = canvas_submission.attempt
+            if attempts == None or attempts == 1:
+                attempt = 1
+                print(canvas_submission.submission_comments)
+                if sub.student.marker_message not in [x['comment'] for x in canvas_submission.submission_comments]:
+                    canvas_submission.edit(comment={"text_comment": sub.student.marker_message, "attempt": attempt})
+                    print("SpLD message added (on first submission)")
+                else:
+                    print("SpLD message already exists (on first submission)")
+            else:
+                attempt = attempts
+                print(canvas_submission.submission_comments)
+                if sub.student.marker_message not in [x['comment'] for x in canvas_submission.submission_comments]:
+                    canvas_submission.edit(comment={"text_comment": sub.student.marker_message, "attempt": attempt})
+                    print("SpLD message added (on most recent submission)")
+                else:
+                    print("SpLD message already exists (on most recent submission)")
+
+    
 
         if sub.submitted_at != None:
 
