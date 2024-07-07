@@ -86,6 +86,8 @@ class Submission(models.Model):
     posted_at = models.DateTimeField(null=True, blank=True)
     graded_by = models.CharField(max_length=286, null=True, blank=True)
     seconds_late = models.IntegerField(default=0)
+    late = models.BooleanField(default=False)
+    excused = models.BooleanField(default=False)
     comments = models.TextField(null=True, blank=True)
     rubric = models.TextField(null=True, blank=True)
     similarity_score = models.FloatField(null=True, blank=True)

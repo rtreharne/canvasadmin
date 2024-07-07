@@ -1,3 +1,8 @@
 .related-widget-wrapper-link, .related-widget-wrapper-add-link {
     display: none !important;
 }
+
+.cancel-link {
+    height: auto;
+    color: white;
+}

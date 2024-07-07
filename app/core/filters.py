@@ -106,6 +106,27 @@ class PreviousDateFilter(admin.SimpleListFilter):
             return queryset.filter(previous_term_assignment__due_at__gte=date_obj.start, previous_term_assignment__due_at__lte=date_obj.finish)
 
         return queryset
+
+from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
+
+class SubmissionSupportPlanFilter(admin.SimpleListFilter):
+    title = _('Support plan')
+    parameter_name = 'support_plan'
+
+    def lookups(self, request, model_admin):
+        # This provides two options in the admin: Yes (True) and No (False)
+        return (
+            ('True', _('Yes')),
+            ('False', _('No')),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() in ('True', 'False'):
+            value = self.value() == 'True'
+            # Filters based on the student's support_plan Boolean field
+            return queryset.filter(student__support_plan=value)
+        return queryset
         
 
 
