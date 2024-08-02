@@ -4,6 +4,7 @@ from accounts.models import UserProfile
 from core.models import Assignment
 import uuid
 from django.core.exceptions import ValidationError
+import re
 
 class Date(models.Model):
     label = models.CharField(max_length=128)
@@ -73,18 +74,13 @@ class Extension(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     
 
-    
-
-
-
-
-
-
     def __str__(self):
         return str(self.student_id)
     
     def save(self, *args, **kwargs):
         course = self.assignment.course
+        # strip first set of consecutive digits from self.student.sis_user_id
+        self.unique_id = re.match(r'\d+', self.student.sis_user_id).group()
         self.course = course
         if self.apply_to_subcomponents:
             component = ".".join(self.assignment.assignment_name.split(".")[:2])

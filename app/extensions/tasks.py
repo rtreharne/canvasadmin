@@ -35,6 +35,7 @@ def task_create_extension(row):
                 student = student,
                 course = course,
                 assignment = assignment,
+                extension_type = row["extension_type"],
                 extension_deadline = parse(str(row["extension_deadline"])),
                 original_deadline = assignment.due_at
             ).save()

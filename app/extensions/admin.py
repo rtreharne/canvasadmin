@@ -84,6 +84,8 @@ class ExtensionAdmin(admin.ModelAdmin):
         return my_urls + urls
 
     def import_csv(self, request):
+        template = "/static/static/extensions/csv_templates/extension_template.csv"
+        info = "<p>Your csv file must have columns 'student_id', 'extension_type', 'assignment_id' and 'extension_deadline'.</p><p><a href='{}'>Download template csv</a></p>".format(template)
         if request.method == "POST":
             file = request.FILES["csv_file"]
 
@@ -114,7 +116,7 @@ class ExtensionAdmin(admin.ModelAdmin):
             self.message_user(request, "Your csv file has been imported. Your extensions will appear shortly. Keep refreshing.")
             return redirect("..")
         form = CsvImportForm()
-        payload = {"form": form}
+        payload = {"form": form, "info": info}
         return render(
             request, "extensions/csv_form.html", payload
         )
