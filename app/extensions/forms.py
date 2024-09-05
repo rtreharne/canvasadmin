@@ -87,7 +87,9 @@ class AssignmentForm(forms.Form):
             choices=choices
             )            
         self.fields['reason'] = forms.CharField(
-            widget=forms.Textarea
+            widget=forms.Textarea, 
+            max_length=1000, 
+            help_text= 'Max 1000 characters.'
             )
         
         if root == 'elp':
