@@ -4,6 +4,14 @@ from .models import Assignment, Course
 class CsvImportForm(forms.Form):
     csv_file = forms.FileField()
 
+    # Add validation. Must be .csv file
+    def clean_csv_file(self):
+        csv_file = self.cleaned_data['csv_file']
+        if not csv_file.name.endswith('.csv'):
+            print("File is not a .csv file")
+            raise forms.ValidationError('Please upload a .csv file')
+        return csv_file
+
 
 from django.forms.widgets import DateInput, TimeInput
 

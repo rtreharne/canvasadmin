@@ -9,7 +9,7 @@ from .tasks import update_assignments, get_courses, task_update_assignment_deadl
 from logs.models import AssignmentLog, Department
 from .admin_actions import export_as_csv_action
 from django.contrib import messages
-from .filters import AssignmentDateFilter, SubmissionDateFilter, PreviousDateFilter
+from .filters import AssignmentDateFilter, SubmissionDateFilter, PreviousDateFilter, SubmissionSupportPlanFilter
 from datetime import datetime
 from .forms import CsvImportForm, AssignmentDatesUpdateForm, AssignResitForm
 from django.urls import path
@@ -19,6 +19,7 @@ from admin_confirm.admin import AdminConfirmMixin, confirm_action
 from .helpers import *
 from django import forms
 from .actions import export_submission_as_csv
+from .tasks import task_add_late_flag, task_remove_late_flag
 
 class AssignmentTypeAdmin(admin.ModelAdmin):
     list_display = ("name",)
@@ -31,6 +32,8 @@ class StaffAdmin(admin.ModelAdmin):
     list_display = ("name", "items_graded", "courses_graded_in",)
 
     list_filter = ("name",)
+
+    actions = [export_as_csv_action(),]
 
 admin.site.register(Staff, StaffAdmin)
 
@@ -197,29 +200,50 @@ class StudentAdmin(admin.ModelAdmin):
         return my_urls + urls
 
     def import_csv(self, request):
+
+        info = "Your csv file must have columns 'student_id' and 'message'."
         if request.method == "POST":
             file = request.FILES["csv_file"]
-
-            decoded_file = file.read().decode('utf-8').splitlines()
-            reader = csv.reader(decoded_file)
-
-            # get columns
-            columns = next(reader)
-
-            # format reader as list of dicts
-            data = []
-            [data.append({x: y for x, y in zip(columns, row)}) for row in reader]
-
-            for item in data:
-                print(item["student_id"], type(item["student_id"]))
+            form = CsvImportForm(request.POST, request.FILES)
+            if form.is_valid():
                 try:
-                    student = Student.objects.filter(sis_user_id__contains=str(item["student_id"]))[0]
-                    student.support_plan = True
-                    student.marker_message = item["message"]
-                    student.save()
-
+                    decoded_file = file.read().decode('utf-8').splitlines()
                 except:
-                    print("Student not found.")
+                    decoded_file = file.read().decode('utf-16').splitlines()
+                
+                reader = csv.reader(decoded_file)
+
+                # get columns
+                columns = next(reader)
+
+                # check that columns have "student_id" and "message" headers
+                if "student_id" not in columns or "message" not in columns:
+                    form.add_error(None, "Your csv file must have columns 'student_id' and 'message'.")
+                    return render(
+                        request, "csv_form.html", {"form": form, "info": info}
+                    )
+
+                # format reader as list of dicts
+                data = []
+                [data.append({x: y for x, y in zip(columns, row)}) for row in reader]
+
+                print("DATA", data)
+
+                for item in data:
+                    print(item["student_id"], type(item["student_id"]))
+                    try:
+                        student = Student.objects.filter(sis_user_id__contains=str(item["student_id"]))[0]
+                        student.support_plan = True
+                        student.marker_message = item["message"]
+                        student.save()
+
+                    except:
+                        print("Student not found.")
+            else:
+                print(form.errors)
+                return render(
+                    request, "csv_form.html", {"form": form, "info": info}
+                )
 
             
             self.message_user(request, "Your csv file has been imported. Your student records have been updated.")
@@ -227,6 +251,7 @@ class StudentAdmin(admin.ModelAdmin):
         
         form = CsvImportForm()
         payload = {"form": form}
+        payload["info"] = info
         return render(
             request, "csv_form.html", payload
         )
@@ -330,6 +355,9 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
         "integrity_concern",
         "similarity_link",
         "gai_declaration",
+        "late",
+        "excused",
+        "support_plan",
     )
 
     list_filter=("assignment__course__course_code", 
@@ -343,14 +371,16 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
                  "assignment__assignment_type",
                  "assignment__course__programme",
                  "gai_declaration",
+                 "late",
+                 "excused",
+                 SubmissionSupportPlanFilter
                  )
 
     search_fields = (
         "student__sortable_name", "assignment__assignment_name", "assignment__course__course_code"
     )
 
-    actions = ["sync_submissions", "apply_zero_scores", "apply_cat_b", "apply_cat_c", 
-               export_submission_as_csv, "award_five_min_extensions"]
+    actions = [export_submission_as_csv, "sync_submissions", "apply_zero_scores", "apply_cat_b", "apply_cat_c", "remove_late_flag", "excuse"]
 
     change_list_template = "core/submissions_changelist.html"
 
@@ -403,6 +433,9 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
         user_profile = UserProfile.objects.get(user=request.user)
         queryset = Submission.objects.filter(course__course_department=user_profile.department)
         return queryset
+    
+    def support_plan(self, obj):
+        return obj.student.support_plan
 
     def student_link(self, obj):
         return format_html('<a href="?student__sortable_name={}">{}</a>'.format(obj.student, obj.student))
@@ -450,6 +483,51 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
     student_link.short_description="Student"
     student_link.admin_order_field = "student"
 
+    @admin.action(description="Remove Late Flag")
+    @confirm_action
+    def remove_late_flag(modeladmin, request, queryset):
+        if request.user.is_staff:
+            user_profile = UserProfile.objects.get(user=request.user)
+            
+            user_ids = [x.student.canvas_id for x in queryset]
+            assignment_ids = [x.assignment.assignment_id for x in queryset]
+            course_ids = [x.course.course_id for x in queryset]
+            submission_ids = [x.id for x in queryset]
+
+            for course_id, assignment_id, user_id, submission_id in zip(course_ids, assignment_ids, user_ids, submission_ids):
+                task_remove_late_flag.delay(request.user.username, course_id, assignment_id, user_id, submission_id)
+
+    @admin.action(description="Excuse")
+    @confirm_action
+    def excuse(modeladmin, request, queryset):
+        if request.user.is_staff:
+            user_profile = UserProfile.objects.get(user=request.user)
+            
+            user_ids = [x.student.canvas_id for x in queryset]
+            assignment_ids = [x.assignment.assignment_id for x in queryset]
+            course_ids = [x.course.course_id for x in queryset]
+            submission_ids = [x.id for x in queryset]
+
+            for course_id, assignment_id, user_id, submission_id in zip(course_ids, assignment_ids, user_ids, submission_ids):
+                task_excuse.delay(request.user.username, course_id, assignment_id, user_id, submission_id)
+
+
+            messages.info(request, "You need to resync the submissions to see the changes.")
+    
+
+    # @admin.action(description="Add Late Flag")
+    # def add_late_flag(modeladmin, request, queryset):
+    #     if request.user.is_staff:
+    #         user_profile = UserProfile.objects.get(user=request.user)
+            
+    #         user_ids = [x.student.canvas_id for x in queryset]
+    #         assignment_ids = [x.assignment.assignment_id for x in queryset]
+    #         course_ids = [x.course.course_id for x in queryset]
+
+    #         for course_id, assignment_id, user_id in zip(course_ids, assignment_ids, user_ids):
+    #             task_add_late_flag.delay(request.user.username, course_id, assignment_id, user_id)
+
+
     @admin.action(description="Sync selected submissions")
     @confirm_action
     def sync_submissions(modeladmin, request, queryset):
@@ -466,8 +544,7 @@ class SubmissionAdmin(AdminConfirmMixin, admin.ModelAdmin):
             for submission_ids in submission_ids_batch:
                 update_submissions.delay(request.user.username, submission_ids)
 
-    
-            messages.info(request, "Syncing submissions. This action is not instantaneous. Check back later.")
+            messages.info(request, "This action is not instantaneous. Check back later.")
     
     @admin.action(description="Apply zero scores to selected")
     @confirm_action

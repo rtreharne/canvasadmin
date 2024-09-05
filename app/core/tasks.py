@@ -509,6 +509,7 @@ def task_get_submissions(username, assignment_ids):
     for assignment_id in assignment_ids:
         task_get_submission(username, assignment_id)
 
+
 @shared_task()
 def task_get_submission(username, assignment_id):
     assignment = Assignment.objects.get(assignment_id=assignment_id)
@@ -721,6 +722,8 @@ def update_submissions(username, submission_ids):
     app_canvas_mapp = {
         "score": "score",
         "seconds_late": "seconds_late",
+        "late": "late",
+        "excused": "excused"
     }
 
     
@@ -735,6 +738,30 @@ def update_submissions(username, submission_ids):
         except:
             print("couldn't get canvas submission")
             continue
+
+        # SpLD comment update on most recent submission
+
+        if sub.student.support_plan:
+            # Get number of sub attempts
+            attempts = canvas_submission.attempt
+            if attempts == None or attempts == 1:
+                attempt = 1
+                print(canvas_submission.submission_comments)
+                if sub.student.marker_message not in [x['comment'] for x in canvas_submission.submission_comments]:
+                    canvas_submission.edit(comment={"text_comment": sub.student.marker_message, "attempt": attempt})
+                    print("SpLD message added (on first submission)")
+                else:
+                    print("SpLD message already exists (on first submission)")
+            else:
+                attempt = attempts
+                print(canvas_submission.submission_comments)
+                if sub.student.marker_message not in [x['comment'] for x in canvas_submission.submission_comments]:
+                    canvas_submission.edit(comment={"text_comment": sub.student.marker_message, "attempt": attempt})
+                    print("SpLD message added (on most recent submission)")
+                else:
+                    print("SpLD message already exists (on most recent submission)")
+
+    
 
         if sub.submitted_at != None:
 
@@ -1836,6 +1863,72 @@ def task_turn_on_late_policy(username, course_id):
     )
     return "Done"
 
+@shared_task
+def task_remove_late_flag(username, course_id, assignment_id, user_id, submission_id):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    course = canvas.get_course(course_id)
+
+    assignment = course.get_assignment(assignment_id)
+
+    submission = assignment.get_submission(user_id)
+
+    print("SYNCING SUBMISSION")
+
+    submission.edit(submission={"late_policy_status": "none"})
+
+    
+    update_submissions(username, [submission_id])
+
+    return "Done: Late flag removed"
+
+@shared_task
+def task_excuse(username, course_id, assignment_id, user_id, submission_id):
+    user = UserProfile.objects.get(user__username=username)
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    course = canvas.get_course(course_id)
+
+    assignment = course.get_assignment(assignment_id)
+
+    submission = assignment.get_submission(user_id)
+
+    submission.edit(submission={"excuse": True})
+
+    # resync
+    update_submissions(username, [submission_id])
+
+    return "Done: Submission excused!"
+
+@shared_task
+def task_add_late_flag(username, course_id, assignment_id, user_id):
+    user = UserProfile.objects.get(user__username=username)
+
+
+
+    API_URL = user.department.CANVAS_API_URL
+    API_TOKEN = user.department.CANVAS_API_TOKEN
+
+    print(course_id, assignment_id, user_id)
+
+    canvas = Canvas(API_URL, API_TOKEN)
+
+    course = canvas.get_course(course_id)
+
+    assignment = course.get_assignment(assignment_id)
+
+    submission = assignment.get_submission(user_id)
+
+    submission.edit(submission={"late_policy_status": "late"})
+
+    return "Done: Late flag added"
 
 
 
