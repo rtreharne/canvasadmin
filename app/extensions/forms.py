@@ -79,7 +79,11 @@ class AssignmentForm(forms.Form):
         queryset = Assignment.objects.filter(pk__in=assignments)
         if root=='elp':
             choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__lte=datetime.datetime.now()) if datetime.datetime.now() < (assignment.due_at.replace(tzinfo=None) + datetime.timedelta(weeks=2))]
+            
+            # check extensions for student
+            # if any extension deadlines within two weeks of now. Add assignment to list elp list
 
+            
         if root=='extensions':
             choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__gte=datetime.datetime.now()) if datetime.datetime.now() > (assignment.due_at.replace(tzinfo=None) - datetime.timedelta(weeks=2))]
 

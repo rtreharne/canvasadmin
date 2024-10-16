@@ -276,7 +276,7 @@ def task_apply_override(username, extension_pk, root):
         assignment_override={
             "student_ids": [extension.student.canvas_id],
             "due_at": datetime_to_json(extension.extension_deadline),
-            "lock_at": datetime_to_json(extension.assignment.due_at + timedelta(days=7, minutes=5))
+            "lock_at": datetime_to_json(extension.assignment.due_at + timedelta(days=14, minutes=0))
         }
     )
 
