@@ -215,6 +215,7 @@ class StudentAdmin(admin.ModelAdmin):
 
                 # get columns
                 columns = next(reader)
+                print("printing columns", columns)
 
                 # check that columns have "student_id" and "message" headers
                 if "student_id" not in columns or "message" not in columns:
