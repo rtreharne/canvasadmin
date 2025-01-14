@@ -77,15 +77,20 @@ class AssignmentForm(forms.Form):
 
         assignments = [x.id for x in Assignment.objects.filter(course__course_id=course_canvas_id, active=True, quiz=False) if x.due_at]
         queryset = Assignment.objects.filter(pk__in=assignments)
+
+        # get current datetime
+        now = datetime.datetime.now()
+
+        date = Date.objects.get(start__lte=now, finish__gte=now)
         if root=='elp':
-            choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__lte=datetime.datetime.now()) if datetime.datetime.now() < (assignment.due_at.replace(tzinfo=None) + datetime.timedelta(weeks=2))]
+            choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__lte=datetime.datetime.now()) if datetime.datetime.now() < (assignment.due_at.replace(tzinfo=None) + datetime.timedelta(days=date.elp_window))]
             
             # check extensions for student
             # if any extension deadlines within two weeks of now. Add assignment to list elp list
 
             
         if root=='extensions':
-            choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__gte=datetime.datetime.now()) if datetime.datetime.now() > (assignment.due_at.replace(tzinfo=None) - datetime.timedelta(weeks=2))]
+            choices=[(assignment.assignment_id, assignment.assignment_name) for assignment in queryset.filter(due_at__gte=datetime.datetime.now()) if datetime.datetime.now() > (assignment.due_at.replace(tzinfo=None) - datetime.timedelta(days=date.elp_window))]
 
         self.fields['assignment'] = forms.ChoiceField(
             choices=choices
@@ -105,12 +110,7 @@ class AssignmentForm(forms.Form):
 
             student = Student.objects.get(sis_user_id__contains=str(student_id))
 
-            # get current datetime
-            now = datetime.datetime.now()
 
-            # get Date objects that are active and have a start date before now and a finish date after now
-            date = Date.objects.get(start__lte=now, finish__gte=now)
-            print("Dates:", date.start, date.finish, now)
 
             # get count of approved exemptions from late penalties for the student that are within the current date range and have no files attached
             count = Extension.objects.filter(student=student, extension_deadline__lte=date.finish, extension_deadline__gte=date.start, approved=True, files__exact="", extension_type__contains="ELP").exclude(late_ignore=True).count()

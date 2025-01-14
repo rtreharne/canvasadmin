@@ -66,7 +66,17 @@ def assignment(request, student_id, course_canvas_id):
     Render a page with an AssignmentForm for the course.
     """
 
+    now = datetime.datetime.now()
+
+    try:
+        date = Date.objects.get(start__lte=now, finish__gte=now)
+    except:
+        error_message = '<p class="error">Error. Date range object does not exist for current date. Please contact SoBSAssessment@liverpool.ac.uk.</p>'
+        return render(request, 'extensions/elp_assignment.html', {'error_message': error_message})  
+
     root = list(filter(None, request.build_absolute_uri().split('/')))[-3]
+
+
     if request.method == 'POST':
         form = AssignmentForm(request.POST, request.FILES, student_id=student_id, course_canvas_id=course_canvas_id, root=root)
 
@@ -117,6 +127,7 @@ def assignment(request, student_id, course_canvas_id):
                 # Check Lens for submission
                 # If DoesNotExist, then return error message
                 # If Exists, then get the submission object
+
                 try:
                     submission = Submission.objects.get(student=student, assignment=assignment)
                     if late_ignore:
@@ -141,7 +152,7 @@ def assignment(request, student_id, course_canvas_id):
                     <li>Wait a few minutes and try again.</li>
                     <li>Wait until the next day and try again.</li>
                     <li>Check that you have submitted the correct assignment.</li>
-                    <li>Contact <a href="mailto:SLS-Assessment@liverpool.ac.uk">SLS-Assessment@liverpool.ac.uk</a> if you are still receiving this error 48 hours after your submission. Be sure to include details of the module and assignment you are trying to apply for.</li>
+                    <li>Contact <a href="mailto:SoBSAssessment@liverpool.ac.uk">SoBSAssessment@liverpool.ac.uk</a> if you are still receiving this error 48 hours after your submission. Be sure to include details of the module and assignment you are trying to apply for.</li>
                     </ul>
                     </p>'''
                     task_get_submission.delay(request.user.username, assignment.assignment_id)
@@ -150,7 +161,7 @@ def assignment(request, student_id, course_canvas_id):
                     return render(request, 'extensions/elp_assignment.html', {'form': form,
                                                                                     'error_message': error_message})
             elif root == 'extensions':
-                extension_deadline = assignment.due_at + datetime.timedelta(days=7, minutes=5)
+                extension_deadline = assignment.due_at + datetime.timedelta(days=date.extension_length)
             
             
             # Create and save extension object
