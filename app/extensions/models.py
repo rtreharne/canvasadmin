@@ -8,7 +8,8 @@ import re
 
 class Date(models.Model):
     label = models.CharField(max_length=128)
-    extension_length = models.IntegerField(default=8, help_text="Extension length in days.")
+    extension_length = models.IntegerField(default=7, help_text="Extension length in days.")
+    submission_window = models.IntegerField(default=15, help_text="Submission window in days.")
     elp_window = models.IntegerField(default=21, help_text="ELP window in days." )
     start = models.DateField(null=True, blank=True)
     finish = models.DateField(null=True, blank=True)

@@ -5,7 +5,7 @@ from core.models import Course, Assignment, Student, Submission, Staff
 from accounts.models import UserProfile
 from datetime import datetime, timedelta
 from accounts.models import Department
-from .models import Extension
+from .models import Extension, Date
 from dateutil.parser import parse
 import requests
 
@@ -248,6 +248,8 @@ def task_apply_override(username, extension_pk, root):
 
     extension = Extension.objects.get(pk=extension_pk)
 
+    date = Date.objects.filter(start__lt=extension.original_deadline, finish__gt=extension.original_deadline).first()
+
     existing_overrides = [x for x in canvas.get_course(extension.assignment.course.course_id).get_assignment(extension.assignment.assignment_id).get_overrides() 
                             if extension.student.canvas_id in x.__dict__.get("student_ids", [])]
 
@@ -276,7 +278,7 @@ def task_apply_override(username, extension_pk, root):
         assignment_override={
             "student_ids": [extension.student.canvas_id],
             "due_at": datetime_to_json(extension.extension_deadline),
-            "lock_at": datetime_to_json(extension.assignment.due_at + timedelta(days=14, minutes=0))
+            "lock_at": datetime_to_json(extension.assignment.due_at + timedelta(days=date.submission_window, minutes=0))
         }
     )
 
