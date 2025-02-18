@@ -769,7 +769,11 @@ def update_submissions(username, submission_ids):
             concerns = {
                 "category a": "A",
                 "category b": "B",
-                "category c": "C, D or E"
+                "category c": "C, D or E",
+                "cat a": "A",
+                "cat b": "B",
+                "cat c": "C, D or E",
+                "2% deduction": "GAI Insufficient"
             }
 
             gai_declaration = {
